@@ -1,0 +1,45 @@
+name: test install
+
+on:
+  push:
+    paths-ignore:
+      - '.gitignore'
+      - 'README.md'
+      - 'LICENSE'
+  pull_request:
+    paths-ignore:
+      - '.gitignore'
+      - 'README.md'
+      - 'LICENSE'
+  release:
+    types:
+      - created
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: print python version, noisily
+        run: |
+          python3 --version
+
+      - name: test install from github branch zip works
+        run: |
+          branch="${{ github.head_ref || github.ref_name }}"
+          # "
+          python3 -m venv env && . env/bin/activate
+          python3 -m pip install wheel
+          PERSONAL_TOKEN="${{ secrets.PERSONAL_TOKEN }}" ./test_zip_install.sh "${branch}"
+
+      - name: run pytest tests
+        run: |
+          rm -rf env
+          python3 -m venv env && . env/bin/activate
+          python3 -m pip install -e ".[test]"
+          pytest -v --doctest-modules
+
+
+

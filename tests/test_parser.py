@@ -1,5 +1,5 @@
 
-from pytwine.twine import MarkdownParser, Chunk
+from pytwine.parser import MarkdownParser, Chunk
 
 def raiseChunks(chunks):
   mystr = str(chunks)

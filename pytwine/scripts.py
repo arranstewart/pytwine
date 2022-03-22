@@ -1,9 +1,21 @@
+
+"""
+Functions that get invoked by installed scripts.
+
+Thin wrappers around API functionality.
+"""
+
 import sys
-from optparse import OptionParser
 import pytwine
-from typing import List #, Set, Dict, Tuple, Optional
+
+from optparse import OptionParser
+from typing import List
 
 def twine_script() -> None:
+  """
+  Implement the `twine` script: parse options, then process
+  a document.
+  """
 
   # Command line options
   parser = OptionParser(usage="pytwine [options] [sourcefile]", version="pytwine " + pytwine.__version__)
@@ -128,3 +140,4 @@ def twine_script() -> None:
 #                   outformat=options.outformat,
 #                   pandoc_args=options.pandoc_args,
 #                   listformats=options.listformats)
+

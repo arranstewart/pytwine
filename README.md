@@ -19,3 +19,9 @@ A Python interpreter, >= 3.6.
 $ python3 -m pip install https://github.com/arranstewart/pytwine/archive/refs/heads/master.zip
 ```
 
+## usage
+
+Typical is to give files a `.pmd` extension, and process them into `.md`.
+
+
+

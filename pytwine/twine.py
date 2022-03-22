@@ -1,4 +1,11 @@
 
+"""
+Main classes providing twine functionality: parse and process
+documents.
+
+"""
+
+
 import re
 
 from typing import List, NamedTuple, Any #, Set, Dict, Tuple, Optional
@@ -12,6 +19,8 @@ class Chunk(NamedTuple):
   start_line: int
 
 class DocChunk(Chunk):
+  "A non-code-block."
+
   def __new__(cls, **kwargs):
     if "chunkType" in kwargs:
       del kwargs["chunkType"]
@@ -20,8 +29,9 @@ class DocChunk(Chunk):
 
 # "options" won't get printed or used in ==
 class CodeChunk(Chunk):
-  """ A Chunk with a self.options attribute added.
-  (doesn't get included for str(), repr() or == purposes.)
+  """ A code block Chunk. Has a self.options attribute added.
+
+  (This doesn't get included for ``str()``, ``repr()`` or ``==`` purposes.)
   """
 
   def __new__(cls, **kwargs):
@@ -48,7 +58,7 @@ def read_file(source: str) -> str:
     return contents
 
 class Parser:
-  """Reads and parses twineable documents into a list of
+  r"""Reads and parses twineable documents into a list of
   Chunks.
 
   Code blocks are considered to start on the line where
@@ -58,17 +68,21 @@ class Parser:
   Empty blocks, and code blocks containing only whitespace,
   are skipped.
 
-  Code blocks can have pandoc-style _options_
-  (e.g. ```python .important startLine=101 animal="spotted lynx"```)
-  where dot gives a class and the = gives attributes;
-  but the Parser _doesn't parse these_. It just stores
+  Code blocks can have pandoc-style **options**. e.g.:
+
+  ::
+
+    ```python .important startLine=101 animal="spotted lynx"
+
+  where dot gives a class and the ``=`` gives attributes;
+  but the Parser *doesn't parse these*. It just stores
   the whole unparsed start-of-block line; other classes can parse the options.
 
-  Only subclass so far is MarkdownParser.
+  Only subclass so far is :class:`MarkdownParser`.
 
-  Subclasses should override is_codeblock_start and is_codeblock_end.
+  Subclasses should override :meth:`is_codeblock_start` and :meth:`is_codeblock_end`.
 
-  sample usage (MarkdownParser subclass):
+  sample usage (using :class:`MarkdownParser` subclass):
 
   >>> parser = MarkdownParser(string="some stuff")
   >>> chunks = parser.parse()
@@ -211,9 +225,13 @@ class Parser:
 
 
 class MarkdownParser(Parser):
-  """
-  Look for code blocks that look like "```.python " or
-  "~~~python " or similar.
+  r"""
+
+  .. |reST| replace:: \```foo
+  .. |starty| replace:: ``
+
+  Look for code blocks that look like |starty|nangpy or
+  ``~~~python`` or similar.
 
   Closing triple must match opening.
 

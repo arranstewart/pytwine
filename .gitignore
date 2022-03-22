@@ -57,3 +57,5 @@ dmypy.json
 /activate
 
 TOKEN
+docs/source/modules.rst
+docs/source/pytwine.rst

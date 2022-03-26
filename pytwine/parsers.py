@@ -5,50 +5,13 @@ documents.
 
 """
 
-
 import re
 
-from typing import List, NamedTuple, Any #, Set, Dict, Tuple, Optional
+from typing import List, cast
 
-class Chunk(NamedTuple):
-  "A chunk of document -- either a code block, or non-code-block."
+from .core import Chunk, CodeChunk, DocChunk
 
-  chunkType:  str
-  content:    str
-  number:     int
-  start_line: int
-
-class DocChunk(Chunk):
-  "A non-code-block."
-
-  def __new__(cls, **kwargs):
-    if "chunkType" in kwargs:
-      del kwargs["chunkType"]
-    self = super(DocChunk, cls).__new__(cls, chunkType="doc", **kwargs)
-    return self
-
-# "options" won't get printed or used in ==
-class CodeChunk(Chunk):
-  """ A code block Chunk. Has a self.options attribute added.
-
-  (This doesn't get included for ``str()``, ``repr()`` or ``==`` purposes.)
-  """
-
-  def __new__(cls, **kwargs):
-    if "chunkType" in kwargs:
-      del kwargs["chunkType"]
-    if "options" in kwargs:
-      options = kwargs["options"]
-      del kwargs["options"]
-    else:
-      options = None
-    self = super(CodeChunk, cls).__new__(cls, chunkType="code", **kwargs)
-    self.options = options
-    return self
-
-
-
-def read_file(source: str) -> str:
+def _read_file(source: str) -> str:
     """
     Read file contents
     """
@@ -58,76 +21,99 @@ def read_file(source: str) -> str:
     return contents
 
 class Parser:
-  r"""Reads and parses twineable documents into a list of
-  Chunks.
+  """
+  Reads and parses twineable documents into a list of
+  :class:`Chunk <pytwine.core.Chunk>`\\ s.
+
+  Has a concept of a **code block marker**, i.e. something like
+  markdown's backtick fenced code blocks::
+
+    ```
+
+  or tilde fenced code blocks::
+
+    ~~~
+
 
   Code blocks are considered to start on the line where
-  the block marker (e.g. ```) begins, and end on the line of their
+  the code block marker begins, and end on the line of their
   end marker.
 
   Empty blocks, and code blocks containing only whitespace,
   are skipped.
 
-  Code blocks can have pandoc-style **options**. e.g.:
-
-  ::
+  Code blocks can have pandoc-style **options**. e.g. for a Markdown
+  document, the options would be given like so::
 
     ```python .important startLine=101 animal="spotted lynx"
 
-  where dot gives a class and the ``=`` gives attributes;
-  but the Parser *doesn't parse these*. It just stores
-  the whole unparsed start-of-block line; other classes can parse the options.
+  where dot gives a class and the ``=`` gives attributes.
+
+  The Parser doesn't parse or process options at all, but just stores
+  the whole unparsed start-of-block line in the
+  ``block_start_line`` attribute
+  of the :class:`CodeChunk <pytwine.core.CodeChunk>`;
+  it's up to Processor classes to parse and potentially
+  make use of the options.
 
   Only subclass so far is :class:`MarkdownParser`.
 
   Subclasses should override :meth:`is_codeblock_start` and :meth:`is_codeblock_end`.
 
-  sample usage (using :class:`MarkdownParser` subclass):
+  **sample usage:**
+
+  sample usage using :class:`MarkdownParser` subclass:
 
   >>> parser = MarkdownParser(string="some stuff")
   >>> chunks = parser.parse()
   >>> chunks
-  [DocChunk(chunkType='doc', content='some stuff', number=1, start_line=1)]
+  [DocChunk(chunkType='doc', contents='some stuff', number=1, startLineNum=1)]
   """
 
   # as doc is processed, state will alternate between
   # "doc" (i.e. in markdown bits)
   # and "code" (i.e. in code blocks)
 
-  def __init__(self, file=None, string=None):
+  def __init__(self, file :str =None, string :str =None):
     """
     Keyword arguments:
-    file: path to a file to be processed
-    string: a sring to be processed.
+        file: path to a file to be processed
+        string: a string to be processed
 
-    At least one of file or string must be given.
+    One of either ``file`` or ``string`` must be given.
 
     """
 
     self.source = file
 
     # Get input from string or
-    if file is not None:
-      self.rawtext = read_file(self.source)
+    if self.source is not None:
+      self.source = cast(str, self.source)
+      self.rawtext = _read_file(self.source)
     elif string is not None:
       self.rawtext = string
     else:
       raise KeyError("string or file must be specified")
     self.state = "doc"  # Initial state of document
 
-  def is_codeblock_start(self, line):
+  def is_codeblock_start(self, line : str):
     """ returns a boolean-ish result when a line matches start-of-code-block """
     raise NotImplementedError('is_codeblock_start not implemented')
 
-  def is_codeblock_end(self, line):
+  def is_codeblock_end(self, line : str):
     """ returns a boolean-ish result when a line matches end-of-code-block
 
-    Should only be called when we're in a block / i.e. when self.options is not None.
+    Should only be called when we're in a block / i.e. when self.block_start_line is not None.
     """
     raise NotImplementedError('is_codeblock_end not implemented')
 
   def parse(self) -> List[Chunk] :
-    lines : List[str] = self.rawtext.splitlines()
+    r"""
+    Parse the source and return a list of
+    :class:`Chunk <pytwine.core.Chunk>`\ s.
+    """
+
+    lines : List[str] = self.rawtext.splitlines(keepends=True)
 
     # we accumulate a chunk of lines in currentChunk
     # (then join them back together once the chunk is done)
@@ -140,8 +126,10 @@ class Parser:
     docN  : int = 1
 
     # stores start of code block, so that (a) we know
-    # about options, and (b) we can match end.
-    self.options = None
+    # about block_start_line, and (b) we can match end.
+    self.block_start_line = None
+    self.block_end_line   = None
+
     lineNo : int = 0
     chunk_start_line : int = 1
 
@@ -152,7 +140,7 @@ class Parser:
 
     def addChunk(chunkType) -> bool:
       """
-      helper: add current chunk to chunks.
+      helper func: add current chunk to chunks.
       don't add empty chunks or whitespace-only code
       chunks.
 
@@ -160,7 +148,7 @@ class Parser:
       """
       assert chunkType in ["doc", "code"]
 
-      content = "\n".join(currentChunk)
+      contents = "".join(currentChunk)
       if chunkType == "doc":
         number = docN
         clazz : type = DocChunk
@@ -169,14 +157,15 @@ class Parser:
         clazz = CodeChunk
 
       # Don't parse empty chunks, or whitespace-only code chunks
-      if (chunkType == "code" and content.strip()) or \
-         (chunkType == "doc" and content):
+      if (chunkType == "code" and contents.strip() != "") or \
+         (chunkType == "doc" and contents != ""):
         keywords = dict(chunkType=chunkType,
-                        content=content,
+                        contents=contents,
                         number=number,
-                        start_line=chunk_start_line)
+                        startLineNum=chunk_start_line)
         if chunkType == "code":
-          keywords["options"] = self.options
+          keywords["block_start_line"] = self.block_start_line
+          keywords["block_end_line"]   = self.block_end_line
 
         chunks.append( clazz(**keywords) )
         return True
@@ -189,9 +178,7 @@ class Parser:
 
       if self.state != "code" and self.is_codeblock_start(line):
         self.state = "code"
-        self.options = line
-        #import sys
-        #print(found_codeblock_start, file=sys.stderr)
+        self.block_start_line = line
 
         # we've finished a doc chunk, append it
         if addChunk("doc"):
@@ -202,8 +189,10 @@ class Parser:
       elif self.state == "code" and self.is_codeblock_end(line):
         self.state = "doc"
         # we've finished a code chunk, append it
+        self.block_end_line = line
         if addChunk("code"):
           codeN += 1
+        self.block_end_line = None
         currentChunk = []
         chunk_start_line = lineNo + 1
         onBlockBorder = True
@@ -217,6 +206,7 @@ class Parser:
     # end of for line in lines
     # Handle the last chunk
     if self.state == "code":
+      self.block_end_line = ""
       addChunk("code")
     elif self.state == "doc":
       addChunk("doc")
@@ -225,24 +215,23 @@ class Parser:
 
 
 class MarkdownParser(Parser):
-  r"""
+  """
 
-  .. |reST| replace:: \```foo
-  .. |starty| replace:: ``
+  Look for markdown-style fenced code blocks that
+  have "``python``" or "``.python``" as their first attribute; e.g.::
 
-  Look for code blocks that look like |starty|nangpy or
-  ``~~~python`` or similar.
+    ``` .python someproperty=foo
 
   Closing triple must match opening.
 
-  i.e., if we start a code block with ```python, then
-  ~~~ doesn't end it.
+  i.e., if we start a code block with backticks,
+  then tildes won't end it.
 
-  (And we can therefore include code like:
+  (And we can therefore include code like::
 
-mystring=\"\"\"
-~~~
-\"\"\"
+    mystring=\"""
+    ~~~
+    \"""
 
   safely inside it.)
 
@@ -257,78 +246,21 @@ mystring=\"\"\"
 
   def is_codeblock_start(self, line):
     """ returns a boolean-ish result when a line matches
-    `codeblock_begin` pattern
+    ``codeblock_begin`` pattern
     """
     return re.match(self.codeblock_begin, line)
 
   def is_codeblock_end(self, line):
     """ returns a boolean-ish result when a line matches
-    `codeblock_end` pattern.
+    ``codeblock_end`` pattern.
 
     Should only be called when we're in a code block
-    (i.e. when self.options is not None)
+    (i.e. when self.block_start_line is not None)
     """
-    assert self.options is not None
+    assert self.block_start_line is not None
 
-    blockStart = self.options[:3]
+    blockStart = self.block_start_line[:3]
 
     return line.strip() == blockStart
-
-
-
-
-class Twiner:
-
-  """
-  For processing documents.
-  """
-
-  def __init__(self, source, output = None):
-    self.source = source
-    #name, ext = os.path.splitext(os.path.basename(source))
-    #self.basename = name
-    #self.file_ext = ext
-    self.sink = None
-    self.output = output
-
-    self.parsed = None
-    self.executed = None
-
-  def _setwd(self):
-      self.wd = os.path.dirname(self.source)
-
-      self.reader.parse()
-      self.parsed = self.reader.getparsed()
-
-  ##### !!!
-  def run(self, Processor = None):
-      """Execute code in the document"""
-      if Processor is None:
-          Processor = PwebProcessors.getprocessor(self.kernel)
-
-      proc = Processor(copy.deepcopy(self.parsed),
-                       self.kernel,
-                       self.source,
-                       self.documentationmode,
-                       self.figdir,
-                       self.wd
-                      )
-      proc.run()
-      self.executed = proc.getresults()
-
-  ### !!!
-  def write(self):
-      """Write formatted code to file"""
-      self.setsink()
-
-      self._writeToSink(self.formatted.replace("\r", ""))
-      self._print('Weaved {src} to {dst}\n'.format(src=self.source,
-                                                        dst=self.sink))
-  def twine(self):
-      """Weave the document, equals -> parse, run, format, write"""
-      self.run()
-      self.format()
-      self.write()
-
 
 

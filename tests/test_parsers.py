@@ -1,5 +1,5 @@
 
-from pytwine.parser import MarkdownParser, Chunk
+from pytwine.parsers import MarkdownParser, Chunk, DocChunk, CodeChunk
 
 def raiseChunks(chunks):
   mystr = str(chunks)
@@ -47,9 +47,9 @@ class TestOneBlockDocs:
     parser = MarkdownParser(string=doc)
     chunks = parser.parse()
     expected_chunks = [Chunk(chunkType='doc',
-                              content=doc,
+                              contents=doc,
                               number=1,
-                              start_line=1)]
+                              startLineNum=1)]
     assert chunks == expected_chunks
 
   def test_empty_codeblock_is_skipped(self):
@@ -61,9 +61,9 @@ testing testing 1 2 3
     parser = MarkdownParser(string=doc)
     chunks = parser.parse()
     expected_chunks = [Chunk(chunkType='doc',
-                              content="testing testing 1 2 3",
+                              contents="testing testing 1 2 3\n",
                               number=1,
-                              start_line=1)]
+                              startLineNum=1)]
     assert chunks == expected_chunks
 
   def test_two_line_doc(self):
@@ -71,9 +71,9 @@ testing testing 1 2 3
     parser = MarkdownParser(string=doc)
     chunks = parser.parse()
     expected_chunks = [Chunk(chunkType='doc',
-                              content=doc,
+                              contents=doc,
                               number=1,
-                              start_line=1)]
+                              startLineNum=1)]
     assert chunks == expected_chunks
 
   def test_codeblock_only(self):
@@ -84,10 +84,13 @@ print()
 """
     parser = MarkdownParser(string=doc)
     chunks = parser.parse()
-    expected_chunks = [Chunk(chunkType='code',
-                              content="print()",
+    expected_chunks = [CodeChunk(
+                              contents="print()\n",
                               number=1,
-                              start_line=1)]
+                              startLineNum=1,
+                              block_start_line='```python\n',
+                              block_end_line='```\n'
+                              )]
     assert chunks == expected_chunks
 
   def test_codeblock_delimeters_must_match(self):
@@ -107,10 +110,13 @@ mystring=\"\"\"
 """
     parser = MarkdownParser(string=doc)
     chunks = parser.parse()
-    expected_chunks = [Chunk(chunkType='code',
-                              content='print()\nmystring="""\n~~~\n"""',
+    expected_chunks = [CodeChunk(
+                              contents='print()\nmystring="""\n~~~\n"""\n',
                               number=1,
-                              start_line=1)]
+                              startLineNum=1,
+                              block_start_line='```python\n',
+                              block_end_line=''
+                              )]
     assert chunks == expected_chunks
 
 
@@ -127,14 +133,17 @@ foo
     parser = MarkdownParser(string=doc)
     chunks = parser.parse()
     expected_chunks = [\
-        Chunk(chunkType='code',
-               content="print()",
+        CodeChunk(
+               contents="print()\n",
                number=1,
-               start_line=1),
+               startLineNum=1,
+               block_start_line='```python\n',
+               block_end_line='```\n'
+               ),
         Chunk(chunkType='doc',
-               content="foo",
+               contents="foo\n",
                number=1,
-               start_line=4)
+               startLineNum=4)
         ]
     assert chunks == expected_chunks
 
@@ -151,14 +160,16 @@ foo
     parser = MarkdownParser(string=doc)
     chunks = parser.parse()
     expected_chunks = [\
-        Chunk(chunkType='code',
-               content="print()",
+        CodeChunk(
+               contents="print()\n",
                number=1,
-               start_line=1),
+               startLineNum=1,
+               block_start_line='```python\n',
+               block_end_line='```\n'),
         Chunk(chunkType='doc',
-               content="foo",
+               contents="foo\n",
                number=1,
-               start_line=4)
+               startLineNum=4)
         ]
     assert chunks == expected_chunks
 
@@ -172,13 +183,15 @@ print()
     chunks = parser.parse()
     expected_chunks = [\
         Chunk(chunkType='doc',
-               content="foo",
+               contents="foo\n",
                number=1,
-               start_line=1),
-        Chunk(chunkType='code',
-               content="print()",
+               startLineNum=1),
+        CodeChunk(
+               contents="print()\n",
                number=1,
-               start_line=2)
+               startLineNum=2,
+               block_start_line='```python\n',
+               block_end_line='')
         ]
     assert chunks == expected_chunks
 
@@ -197,17 +210,19 @@ bar
     chunks = parser.parse()
     expected_chunks = [\
         Chunk(chunkType='doc',
-               content="foo",
+               contents="foo\n",
                number=1,
-               start_line=1),
-        Chunk(chunkType='code',
-               content="print()",
+               startLineNum=1),
+        CodeChunk(
+               contents="print()\n",
                number=1,
-               start_line=2),
+               startLineNum=2,
+               block_start_line='```python\n',
+               block_end_line='```\n'),
         Chunk(chunkType='doc',
-               content="bar",
+               contents="bar\n",
                number=2,
-               start_line=5)
+               startLineNum=5)
         ]
     assert chunks == expected_chunks
 
@@ -226,18 +241,22 @@ print(2)
     chunks = parser.parse()
     #raiseChunks(chunks)
     expected_chunks = [\
-        Chunk(chunkType='code',
-               content="print()",
+        CodeChunk(
+               contents="print()\n",
                number=1,
-               start_line=1),
+               startLineNum=1,
+               block_start_line='```python\n',
+               block_end_line='```\n'),
         Chunk(chunkType='doc',
-               content="bar",
+               contents="bar\n",
                number=1,
-               start_line=4),
-        Chunk(chunkType='code',
-               content="print(2)",
+               startLineNum=4),
+        CodeChunk(
+               contents="print(2)\n",
                number=2,
-               start_line=5)
+               startLineNum=5,
+               block_start_line='```python\n',
+               block_end_line='```\n'),
         ]
     assert chunks == expected_chunks
 
@@ -254,20 +273,24 @@ print(2)
   parser = MarkdownParser(string=doc)
   chunks = parser.parse()
   expected_chunks = [\
-      Chunk(chunkType='code',
-             content="print()",
+      CodeChunk(
+             contents="print()\n",
              number=1,
-             start_line=1),
+             startLineNum=1,
+             block_start_line='```python .important foo=bar\n',
+             block_end_line='```\n'),
       Chunk(chunkType='doc',
-             content="bar",
+             contents="bar\n",
              number=1,
-             start_line=4),
-      Chunk(chunkType='code',
-             content="print(2)",
+             startLineNum=4),
+      CodeChunk(
+             contents="print(2)\n",
              number=2,
-             start_line=5)
+             startLineNum=5,
+             block_start_line='```python\n',
+             block_end_line='```\n'),
       ]
   assert chunks == expected_chunks
 
-  assert chunks[0].options == "```python .important foo=bar"
+  assert chunks[0].block_start_line == "```python .important foo=bar\n"
 

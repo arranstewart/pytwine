@@ -29,7 +29,8 @@ setup(name='pytwine',
       packages=['pytwine'],
       install_requires = ['markdown'],
       python_requires = '>=3.6',
-      extras_require = {'test': ['coverage', 'pytest']
+      extras_require = {'test': ['coverage', 'pytest', 'hypothesis'],
+                        'docs': ['sphinx >= 4.0']
                        },
       license='LICENSE',
       long_description = read('README.md'),

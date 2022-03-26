@@ -5,7 +5,7 @@ pytwine: markdown+python report generation
 Release v\ **TODO - INCLUDE VERSION HERE**.
 
 **pytwine** is a minimal report generator for generating
-scientific reports from Markdown with embedded Python code.
+documents from Markdown with embedded Python code.
 
 -------------------
 
@@ -20,17 +20,18 @@ pytwine supports Python 3.6+.
    :caption: Contents:
 
 
-
 The API Documentation / Guide
 -----------------------------
 
 If you are looking for information on a specific function, class, or method,
 this part of the documentation is for you.
 
-.. toctree::
-   :maxdepth: 4
+.. autosummary::
+   :toctree: _autosummary
+   :template: cust-module-template.rst
+   :recursive:
 
-   modules
+   pytwine
 
 Indices and tables
 ==================
@@ -38,3 +39,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+

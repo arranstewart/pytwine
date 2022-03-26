@@ -28,11 +28,15 @@ release = '0.1.0'
 # ones.
 extensions = [
       'sphinx.ext.autodoc',
+      'sphinx.ext.autosectionlabel',
+      'sphinx.ext.autosummary',
       'sphinx.ext.coverage',
       'sphinx.ext.napoleon',
       'sphinx.ext.viewcode',
       'sphinx.ext.intersphinx',
       ]
+
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

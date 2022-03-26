@@ -4,7 +4,7 @@ Core classes: chunks of document.
 """
 
 
-from typing import NamedTuple, Any, List
+from typing import NamedTuple, List
 
 class Chunk(NamedTuple):
   """
@@ -76,9 +76,11 @@ class CodeChunk(Chunk):
                 line.
     block_end_line: stores the end-of-code-block demarcator
                 line.
-  >>> c = CodeChunk(contents="foo bar", number=3, startLineNum=10, block_start_line="``` python", block_end_line="```")
+  >>> c = CodeChunk(contents="foo bar", number=3, startLineNum=10, \
+block_start_line="``` python", block_end_line="```")
   >>> c
-  CodeChunk(chunkType='code', contents='foo bar', number=3, startLineNum=10, block_start_line='``` python', block_end_line='```')
+  CodeChunk(chunkType='code', contents='foo bar', number=3, \
+startLineNum=10, block_start_line='``` python', block_end_line='```')
   """
 
   block_start_line: str
@@ -90,7 +92,7 @@ class CodeChunk(Chunk):
 
     if "block_start_line" in kwargs:
       block_start_line = kwargs["block_start_line"]
-      assert type(block_start_line) != type(None), \
+      assert block_start_line is not None, \
           "block_start_line for CodeChunk may not be None"
       del kwargs["block_start_line"]
     else:
@@ -98,7 +100,7 @@ class CodeChunk(Chunk):
 
     if "block_end_line" in kwargs:
       block_end_line = kwargs["block_end_line"]
-      assert type(block_end_line) != type(None), \
+      assert block_end_line is not None, \
           "block_end_line for CodeChunk may not be None"
       del kwargs["block_end_line"]
     else:

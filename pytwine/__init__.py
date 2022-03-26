@@ -1,4 +1,9 @@
 
+"""
+pytwine package
+"""
+
+
 import sys
 #from . import readers
 #from .pweb import *
@@ -28,18 +33,23 @@ def twine(infile_name) -> None :
 #    Processes a Pweave document and writes output to a file
 #
 #    :param file: ``string`` input file
-#    :param doctype: ``string`` output document format: call with listformats true to get list of supported formats.
+#    :param doctype: ``string`` output document format: call with
+#             listformats true to get list of supported formats.
 #    :param informat: ``string`` input format: "noweb", "markdown", "notebook" or "script"
 #    :param kernel: ``string`` Jupyter kernel used to run code: default is python3
 #    :param plot: ``bool`` use matplotlib
-#    :param docmode: ``bool`` use documentation mode, chunk code and results will be loaded from cache and inline code will be hidden
+#    :param docmode: ``bool`` use documentation mode, chunk code and
+#               results will be loaded from cache and inline code will be hidden
 #    :param cache: ``bool`` Cache results to disk for documentation mode
 #    :param figdir: ``string`` directory path for figures
-#    :param cachedir: ``string`` directory path for cached results used in documentation mode
-#    :param figformat: ``string`` format for saved figures (e.g. '.png'), if None then the default for each format is used
+#    :param cachedir: ``string`` directory path for cached results used in
+#                         documentation mode
+#    :param figformat: ``string`` format for saved figures (e.g. '.png'), if
+#                 None then the default for each format is used
 #    :param listformats: ``bool`` List available formats and exit
 #    :param output: ``string`` output file
-#    :param mimetype: ``string`` Source document's text mimetype. This is used to set cell
+#    :param mimetype: ``string`` Source document's text mimetype. This is used
+#                               to set cell
 #                                type in Jupyter notebooks.
 #    """
 #

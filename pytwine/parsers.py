@@ -7,18 +7,25 @@ documents.
 
 import re
 
-from typing import List, cast
+from typing import List, TextIO, cast
 
 from .core import Chunk, CodeChunk, DocChunk
 
-def _read_file(source: str) -> str:
-    """
-    Read file contents
-    """
+def _read_filepath(source: str) -> str:
+  """
+  Read file contents
+  """
 
-    with open(source, 'r', encoding='utf-8') as infile:
-        contents = infile.read()
-    return contents
+  with open(source, 'r', encoding='utf-8') as infile:
+    contents = infile.read()
+  return contents
+
+def _read_file(infile: TextIO) -> str:
+  """
+  Read file contents
+  """
+  return infile.read()
+
 
 class Parser:
   """
@@ -89,12 +96,18 @@ class Parser:
     # Get input from string or
     if self.source is not None:
       self.source = cast(str, self.source)
-      self.rawtext = _read_file(self.source)
+      self.rawtext = _read_filepath(self.source)
     elif string is not None:
       self.rawtext = string
     else:
       raise KeyError("string or file must be specified")
     self.state = "doc"  # Initial state of document
+
+    # stores start of code block, so that (a) we know
+    # about block_start_line, and (b) we can match end.
+    self.block_start_line = None
+    self.block_end_line   = None
+
 
   def is_codeblock_start(self, line : str):
     """ returns a boolean-ish result when a line matches start-of-code-block """
@@ -138,7 +151,7 @@ class Parser:
     # only the contents.
     onBlockBorder : bool = False
 
-    def addChunk(chunkType) -> bool:
+    def add_chunk(chunkType) -> bool:
       """
       helper func: add current chunk to chunks.
       don't add empty chunks or whitespace-only code
@@ -181,7 +194,7 @@ class Parser:
         self.block_start_line = line
 
         # we've finished a doc chunk, append it
-        if addChunk("doc"):
+        if add_chunk("doc"):
           docN += 1
         currentChunk = []
         chunk_start_line = lineNo
@@ -190,7 +203,7 @@ class Parser:
         self.state = "doc"
         # we've finished a code chunk, append it
         self.block_end_line = line
-        if addChunk("code"):
+        if add_chunk("code"):
           codeN += 1
         self.block_end_line = None
         currentChunk = []
@@ -207,9 +220,9 @@ class Parser:
     # Handle the last chunk
     if self.state == "code":
       self.block_end_line = ""
-      addChunk("code")
+      add_chunk("code")
     elif self.state == "doc":
-      addChunk("doc")
+      add_chunk("doc")
 
     return chunks
 
@@ -238,11 +251,11 @@ class MarkdownParser(Parser):
   """
 
   def __init__(self, file=None, string=None):
-      Parser.__init__(self, file, string)
+    Parser.__init__(self, file, string)
 
-      # see tests/test_parser.py/test_tildes_can_start_block
-      self.codeblock_begin = r"^[`~]{3,}\s*(?:|\.|)python(?:;|,|)\s*(.*?)(?:\}|\s*)$"
-      self.codeblock_end = r"^(`|~){3,}\s*$"
+    # see tests/test_parser.py/test_tildes_can_start_block
+    self.codeblock_begin = r"^[`~]{3,}\s*(?:|\.|)python(?:;|,|)\s*(.*?)(?:\}|\s*)$"
+    self.codeblock_end = r"^(`|~){3,}\s*$"
 
   def is_codeblock_start(self, line):
     """ returns a boolean-ish result when a line matches

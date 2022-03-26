@@ -1,5 +1,7 @@
 
-.PHONY: test docs perl-test python-test
+.PHONY: test docs perl-test python-test clean docs-clean
+
+SHELL=bash
 
 # evaluate this _once_
 abs_mkfile_dir :=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -27,7 +29,23 @@ test: pyton-test perl-test
 
 docs:
 	$(create_env)
-	$(activate_env) && pip install sphinx \
-		&& sphinx-apidoc -o docs/source pytwine \
-	 	&& cd docs && make clean html
+	$(activate_env) && python3 -m pip install -e "$(abs_mkfile_dir)[docs]" && \
+			cd $(abs_mkfile_dir)/docs && \
+			rm -rf source/_autosummary && \
+			make clean html
+
+docs-clean:
+	rm -rf $(abs_mkfile_dir)/docs/source/_autosummary $(abs_mkfile_dir)/docs/build
+
+clean: docs-clean
+	export GLOBIGNORE=".:.." && \
+	files=`ls -d $(abs_mkfile_dir)/* | grep -v -E 'env|git$$'` && \
+	junk=`find $$files -type d \( -name '.hypothesis' -o \
+	             -name '__pycache__' -o \
+	             -name '*.egg-info' -o \
+	             -name '.pytest_cache' -o \
+	             -name '.mypy_cache' \)` \
+	          && \
+	rm -rf $$junk
+
 

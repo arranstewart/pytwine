@@ -1,3 +1,4 @@
+# pylint: skip-file
 
 from pytwine.parsers import MarkdownParser, Chunk, DocChunk, CodeChunk
 
@@ -20,7 +21,7 @@ def test_permissible_codeblock_starts():
     ]
 
   for sample in acceptable_block_starts:
-    assert parser.is_codeblock_start(sample)
+    assert parser._is_codeblock_start(sample)
 
 class TestEmptyDocs:
 

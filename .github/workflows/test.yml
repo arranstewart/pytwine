@@ -26,6 +26,11 @@ jobs:
         run: |
           python3 --version
 
+      - name: install test dependencies
+        run: |
+          make test-deps
+
+
       - name: test install from github branch zip works
         run: |
           branch="${{ github.head_ref || github.ref_name }}"

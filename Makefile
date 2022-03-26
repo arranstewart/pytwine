@@ -1,5 +1,9 @@
 
-.PHONY: test docs perl-test python-test clean docs-clean
+.PHONY: \
+		test test-deps \
+		perl-test python-test \
+		docs \
+		clean docs-clean
 
 SHELL=bash
 
@@ -22,10 +26,16 @@ perl-test:
 		tmpdir=`$(call create_tmpdir,perltest)` && \
 		cd $$tmpdir                             && \
 		$(create_env)                           && \
-		$(activate_env); set -x; prove --verbose --comments $(abs_mkfile_dir)/t/*.t || res=$$? && \
+		$(activate_env) &&  set -x && \
+		prove --verbose --comments $(abs_mkfile_dir)/t/*.t :: --source-dir $(abs_mkfile_dir) || res=$$? && \
 		rm -rf $$tmpdir && set +x && exit $$res
 
-test: pyton-test perl-test
+test: python-test perl-test
+
+test-deps:
+	python3 -m pip install `$(abs_mkfile_dir)/print_test_deps.py $(abs_mkfile_dir)`
+	sudo apt-get update
+	sudo apt-get install libcarp-assert-perl
 
 docs:
 	$(create_env)

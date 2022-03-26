@@ -63,12 +63,9 @@ def twine_script() -> None:
 #
   (options, args) = parser.parse_args()
 
-  if len(args) > 1:
+  if len(args) > 2:
     parser.print_help()
     sys.exit(1)
-  #  print("This is pytwine %s, enter pytwine -h for help" % pytwine.__version__)
-  #  sys.exit()
-
 
   try:
     infile : str = args.pop(0)
@@ -82,12 +79,7 @@ def twine_script() -> None:
     outfile = None # type: ignore
 
   opts_dict = vars(options)
-
-  print("calling twine w infile:", infile, "outfile:", outfile, "opts:",
-          opts_dict)
   twine(infile, outfile, **opts_dict)
-  print("done call")
-
 
 #def publish():
 #    if len(sys.argv) == 1:

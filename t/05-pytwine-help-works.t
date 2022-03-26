@@ -7,7 +7,6 @@ use Data::Dumper;
 use File::Temp qw/ tempfile tempdir /;
 
 # use a BEGIN block so we print our plan before any modules loaded
-#BEGIN { plan tests => 10 }
 BEGIN { plan tests => 2 }
 
 sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };

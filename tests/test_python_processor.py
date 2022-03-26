@@ -11,7 +11,7 @@ from hypothesis.strategies._internal import SearchStrategy
 
 from pytwine.core import Chunk, DocChunk, CodeChunk, merge_docchunks
 from pytwine.parsers import MarkdownParser
-from pytwine.processors import IdentityProcessor
+from pytwine.processors import IdentityProcessor, PythonProcessor
 
 def test_simple_doc():
   mydoc = """\
@@ -24,13 +24,15 @@ print(2)
 ```
 """
 
+  expected = 'aaa\nbar\n2\n'
+
   parser = MarkdownParser(string=mydoc)
   chunks = parser.parse()
   sink = StringIO()
-  processor = IdentityProcessor(sink)
+  processor = PythonProcessor(sink)
   processor.twine(chunks)
 
-  assert sink.getvalue() == mydoc, "should reverse parser"
+  assert sink.getvalue() == expected, "should process python"
 
 @defines_strategy(force_reusable_values=True)
 @cacheable
@@ -143,7 +145,7 @@ def chunksToDoc(chunks):
   return sink.getvalue()
 
 @given(st.lists( st.one_of(doc_chunks(), code_chunks()) ))
-def xxtest_doc_chunkys(chunks):
+def test_doc_chunkys(chunks):
 
   normalized_chunks = merge_runs(chunks)
 

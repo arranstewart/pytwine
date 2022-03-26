@@ -12,7 +12,11 @@ Then to install test dependencies,
 
 ```
 $ python3 -m pip install -e ".[test]"
+# on debian or ubuntu
+$ sudo apt-get install libcarp-assert-perl
 ```
+
+(Or, `make test-deps` will do the same.)
 
 ## run tests
 

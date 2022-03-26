@@ -1,13 +1,11 @@
 
 """
-Main classes providing twine functionality: parse and process
-documents.
-
+parse documents into chunks.
 """
 
 import re
 
-from typing import List, TextIO, cast
+from typing import List, TextIO, cast, Optional
 
 from .core import Chunk, CodeChunk, DocChunk
 
@@ -65,7 +63,8 @@ class Parser:
 
   Only subclass so far is :class:`MarkdownParser`.
 
-  Subclasses should override :meth:`is_codeblock_start` and :meth:`is_codeblock_end`.
+  Subclasses should override :meth:`_is_codeblock_start` and
+  :meth:`_is_codeblock_end` (see the code for details).
 
   **sample usage:**
 
@@ -81,7 +80,7 @@ class Parser:
   # "doc" (i.e. in markdown bits)
   # and "code" (i.e. in code blocks)
 
-  def __init__(self, file :str =None, string :str =None):
+  def __init__(self, file :TextIO =None, string :str =None):
     """
     Keyword arguments:
         file: path to a file to be processed
@@ -95,8 +94,8 @@ class Parser:
 
     # Get input from string or
     if self.source is not None:
-      self.source = cast(str, self.source)
-      self.rawtext = _read_filepath(self.source)
+      self.source = cast(TextIO, self.source)
+      self.rawtext = _read_file(self.source)
     elif string is not None:
       self.rawtext = string
     else:
@@ -105,20 +104,20 @@ class Parser:
 
     # stores start of code block, so that (a) we know
     # about block_start_line, and (b) we can match end.
-    self.block_start_line = None
-    self.block_end_line   = None
+    self.block_start_line : Optional[str] = None
+    self.block_end_line   : Optional[str] = None
 
 
-  def is_codeblock_start(self, line : str):
+  def _is_codeblock_start(self, line : str):
     """ returns a boolean-ish result when a line matches start-of-code-block """
-    raise NotImplementedError('is_codeblock_start not implemented')
+    raise NotImplementedError('_is_codeblock_start not implemented')
 
-  def is_codeblock_end(self, line : str):
+  def _is_codeblock_end(self, line : str):
     """ returns a boolean-ish result when a line matches end-of-code-block
 
     Should only be called when we're in a block / i.e. when self.block_start_line is not None.
     """
-    raise NotImplementedError('is_codeblock_end not implemented')
+    raise NotImplementedError('_is_codeblock_end not implemented')
 
   def parse(self) -> List[Chunk] :
     r"""
@@ -189,7 +188,7 @@ class Parser:
 
     for lineNo, line in map(bumpFst, enumerate(lines)):
 
-      if self.state != "code" and self.is_codeblock_start(line):
+      if self.state != "code" and self._is_codeblock_start(line):
         self.state = "code"
         self.block_start_line = line
 
@@ -199,7 +198,7 @@ class Parser:
         currentChunk = []
         chunk_start_line = lineNo
         onBlockBorder = True
-      elif self.state == "code" and self.is_codeblock_end(line):
+      elif self.state == "code" and self._is_codeblock_end(line):
         self.state = "doc"
         # we've finished a code chunk, append it
         self.block_end_line = line
@@ -229,8 +228,9 @@ class Parser:
 
 class MarkdownParser(Parser):
   """
+  Parse markdown files into chunks.
 
-  Look for markdown-style fenced code blocks that
+  Looks for markdown-style fenced code blocks that
   have "``python``" or "``.python``" as their first attribute; e.g.::
 
     ``` .python someproperty=foo
@@ -257,13 +257,13 @@ class MarkdownParser(Parser):
     self.codeblock_begin = r"^[`~]{3,}\s*(?:|\.|)python(?:;|,|)\s*(.*?)(?:\}|\s*)$"
     self.codeblock_end = r"^(`|~){3,}\s*$"
 
-  def is_codeblock_start(self, line):
+  def _is_codeblock_start(self, line):
     """ returns a boolean-ish result when a line matches
     ``codeblock_begin`` pattern
     """
     return re.match(self.codeblock_begin, line)
 
-  def is_codeblock_end(self, line):
+  def _is_codeblock_end(self, line):
     """ returns a boolean-ish result when a line matches
     ``codeblock_end`` pattern.
 

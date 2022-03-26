@@ -29,17 +29,17 @@ class Processor:
   a document.
 
   Attributes:
-      sink: subclasses should have an attribute ``sink``,
+      _sink: subclasses should have an attribute ``_sink``,
         a file-like that gets written to.
 
   """
 
-  sink: TextIO
+  _sink: TextIO
 
-  def write(self, s : str):
-    """write ``s`` to our ``sink`` with no newline"""
+  def _write(self, s : str):
+    """write ``s`` to our ``_sink`` with no newline"""
 
-    self.sink.write(s)
+    self._sink.write(s)
 
 
 class IdentityProcessor(Processor):
@@ -49,37 +49,39 @@ class IdentityProcessor(Processor):
 
   def __init__(self, sink: TextIO):
     """
-    sink: a file-like object to be written to.
+    Arguments:
+      sink: a file-like object to be written to.
     """
 
-    self.sink = sink
+    self._sink = sink
 
   def twine(self, chunks : List[Chunk] ) -> None:
-    """WORK IN PROGRESS"""
+    """THE TWINE FUNC - WORK IN PROGRESS"""
 
     for chunk in chunks:
 
       if chunk.chunkType == "doc":
-        self.write(chunk.contents)
+        self._write(chunk.contents)
       elif chunk.chunkType == "code":
         chunk = cast(AnnotatedCodeChunk, chunk)
         #chunk.wibble = True
-        self.write(chunk.block_start_line)
-        self.write(chunk.contents)
-        self.write(chunk.block_end_line)
+        self._write(chunk.block_start_line)
+        self._write(chunk.contents)
+        self._write(chunk.block_end_line)
 
 
 class PythonProcessor(Processor):
   """
-  Processor that tries to run all code block as Python.
+  Processor that tries to run all code blocks as Python.
   """
 
   def __init__(self, sink: TextIO, log: TextIO = sys.stderr):
     """
-    sink: a file-like object to be written to.
+    Arguments:
+      sink: a file-like object to be written to.
     """
 
-    self.sink = sink
+    self._sink = sink
     self.log = log
     self.globals : Dict[Any,Any] = {}
 
@@ -109,17 +111,12 @@ class PythonProcessor(Processor):
     for chunk in chunks:
 
       if chunk.chunkType == "doc":
-        self.write(chunk.contents)
+        self._write(chunk.contents)
       elif chunk.chunkType == "code":
         chunk = cast(AnnotatedCodeChunk, chunk)
         print("Processing chunk", chunk.number, file=self.log)
         result = self._runcode(chunk)
-        self.write(result)
-
-        ##chunk.wibble = True
-        #self.write(chunk.block_start_line)
-        #self.write(chunk.contents)
-        #self.write(chunk.block_end_line)
+        self._write(result)
 
 
 #class Twiner:

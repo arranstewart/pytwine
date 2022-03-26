@@ -1,0 +1,7 @@
+```python .important foo=bar
+print("printed from python")
+```
+normal contents
+```.python
+print(2)
+```

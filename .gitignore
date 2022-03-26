@@ -59,3 +59,6 @@ dmypy.json
 TOKEN
 docs/source/modules.rst
 docs/source/pytwine.rst
+.hypothesis
+_autosummary
+*.XXX

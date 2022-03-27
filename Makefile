@@ -27,7 +27,9 @@ python-test:
 			--cov=pytwine \
 			--cov-report term \
 			--cov-report html \
-			--doctest-modules -v $(abs_mkfile_dir)
+			--doctest-modules -v \
+			  $(abs_mkfile_dir)/pytwine \
+			  $(abs_mkfile_dir)/tests
 
 perl-test:
 		tmpdir=`$(call create_tmpdir,perltest)` && \
@@ -52,17 +54,22 @@ docs:
 			make clean html
 
 docs-clean:
-	rm -rf $(abs_mkfile_dir)/docs/source/_autosummary $(abs_mkfile_dir)/docs/build
+	rm -rf $(abs_mkfile_dir)/docs/source/_autosummary \
+		$(abs_mkfile_dir)/docs/build \
+		$(abs_mkfile_dir)/docs/source/README.md
 
 clean: docs-clean
 	export GLOBIGNORE=".:.." && \
-	files=`ls -d $(abs_mkfile_dir)/* | grep -v -E 'env|git$$'` && \
-	junk=`find $$files -type d \( -name '.hypothesis' -o \
-	             -name '__pycache__' -o \
-	             -name '*.egg-info' -o \
-	             -name '.pytest_cache' -o \
-	             -name '.mypy_cache' \)` \
+	topfiles=`ls -d $(abs_mkfile_dir)/* | grep -v -E 'env|git$$'` && \
+	junk=`find $$topfiles \
+	                -name '.hypothesis'     \
+	             -o -name '__pycache__'     \
+	             -o -name '*.egg-info'      \
+	             -o -name '.pytest_cache'   \
+	             -o -name '.coverage'       \
+	             -o -name 'tags'            \
+	             -o -name '.mypy_cache'`    \
 	          && \
-	rm -rf $$junk
+	rm -rf tags $$junk
 
 

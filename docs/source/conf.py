@@ -8,8 +8,39 @@
 # -- Path setup --------------------------------------------------------------
 
 import os
+import re
+import shutil
 import sys
 sys.path.insert(0, os.path.abspath('../../pytwine/'))
+import _version # type: ignore
+
+pytwine_source_dir = os.path.abspath('../../pytwine/')
+
+# can copy files from source tree into docs source:
+#   shutil.copy(f"{pytwine_source_dir}/../xxx.md", "./xxx.md")
+
+readme_path = os.path.join(pytwine_source_dir, "..", "README.md")
+with open(readme_path, encoding="utf8") as ifp:
+  readme_conts = ifp.read()
+  # strip images
+  readme_conts = re.sub(r'^\[!.*', "", readme_conts, flags=re.MULTILINE)
+  # strip title
+  readme_conts = re.sub(r"^# .*", "", readme_conts, flags=re.MULTILINE)
+
+  with open("README.md", "w", encoding="utf8") as ofp:
+    ofp.write(readme_conts)
+
+hacking_path = os.path.join(pytwine_source_dir, "..", "HACKING.md")
+shutil.copy(hacking_path, "./HACKING.md")
+
+# can add abbreviations that get added at the start
+# of ever rst file:
+
+#rst_prolog = f"""
+#.. |mynickname| replace:: very long text
+#"""
+
+
 
 # -- Project information -----------------------------------------------------
 
@@ -18,8 +49,11 @@ copyright = '2022, Arran D. Stewart'
 author = 'Arran D. Stewart'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
-
+# Source of truth for version is the
+#     pytwine/_version.py
+# file.
+release = _version.__version__
+version = _version.__version__
 
 # -- General configuration ---------------------------------------------------
 
@@ -34,6 +68,7 @@ extensions = [
       'sphinx.ext.napoleon',
       'sphinx.ext.viewcode',
       'sphinx.ext.intersphinx',
+      'myst_parser',
       ]
 
 autosummary_generate = True

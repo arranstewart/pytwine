@@ -16,7 +16,11 @@ $ python3 -m pip install -e ".[test]"
 $ sudo apt-get install libcarp-assert-perl
 ```
 
-(Or, `make test-deps` will do the same.)
+(Or, `make dev-all-install` will do the same.)
+
+## Help on make targets
+
+`make help`
 
 ## run tests
 
@@ -37,7 +41,7 @@ $ prove --verbose --comments t/*.t
 
 # "out-of-source" tests
 
-The Makefile should allow for "out-of-source" tests; you can cd
+The Makefile should allow for "out-of-source" tests; you can `cd`
 to some other directory, run `make -f /path/to/Makefile test`, and
 it should still work.
 

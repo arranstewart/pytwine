@@ -18,9 +18,19 @@ on:
 jobs:
   test:
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.6', '3.9', '3.10']
+
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: print python version, noisily
         run: |
@@ -28,7 +38,7 @@ jobs:
 
       - name: install test dependencies
         run: |
-          make test-deps
+          make dev-all-install
 
 
       - name: test install from github branch zip works
@@ -42,7 +52,7 @@ jobs:
       - name: run pytest tests
         run: |
           rm -rf env
-          make python-test
+          make test-python
 
       - name: archive test reports
         uses: actions/upload-artifact@v2
@@ -57,7 +67,7 @@ jobs:
         if: always()
         run: |
           rm -rf env
-          make perl-test
+          make test-perl
 
       - name: build py docs
         if: always()

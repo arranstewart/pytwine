@@ -1,27 +1,29 @@
 
-pytwine: markdown+python report generation
-==========================================
+=======================================================================
+pytwine: produce reports from Markdown with embedded Python code blocks
+=======================================================================
 
-Release v\ **TODO - INCLUDE VERSION HERE**.
+-----------------
+Version |version|
+-----------------
 
-**pytwine** is a minimal report generator for generating
-documents from Markdown with embedded Python code.
+.. contents:: Contents
+   :depth: 1
+   :local:
+   :backlinks: none
 
--------------------
+.. include:: README.md
+   :parser: myst_parser.sphinx_
 
-**include a sample usage here ...**
-
-(TODO)
-
-pytwine supports Python 3.6+.
+For developers
+--------------
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
 
+   HACKING.md
 
-The API Documentation / Guide
------------------------------
+API Documentation
+-----------------
 
 If you are looking for information on a specific function, class, or method,
 this part of the documentation is for you.
@@ -34,9 +36,10 @@ this part of the documentation is for you.
    pytwine
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
 

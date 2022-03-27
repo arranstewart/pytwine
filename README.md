@@ -1,13 +1,15 @@
 
-# pytwine
+# pytwine – produce reports from Markdown with embedded Python code blocks
 
 [![test install](https://github.com/arranstewart/pytwine/actions/workflows/test.yml/badge.svg)](https://github.com/arranstewart/pytwine/actions/workflows/test.yml)
 
-Produce reports from Markdown with embedded Python code blocks.
-
-A very simple tool in the style of [Pweave][pweave].
+**pytwine** is a minimal report generator for generating
+documents from Markdown with embedded Python code.
+It is a simple tool in the tradition of [Pweave][pweave]
+and [cog][cog].
 
 [pweave]: https://github.com/mpastell/Pweave
+[cog]: https://github.com/nedbat/cog
 
 ## Requirements
 

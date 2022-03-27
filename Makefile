@@ -5,7 +5,10 @@
 		docs \
 		clean docs-clean
 
-SHELL=bash
+SHELL = bash
+PYTEST = pytest
+PERL_PROVE = prove
+PIP = python3 -m pip
 
 # evaluate this _once_
 abs_mkfile_dir :=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -18,40 +21,61 @@ activate_env = if [ -z "$$VIRTUAL_ENV" ]; then . ./activate; fi
 # $(call create_tmpdir,testtype)
 create_tmpdir=mktemp -d --tmpdir pytwine-$(1)-tmp-XXXXXXXXXX
 
+python_test_cmd = \
+	$(PYTEST) \
+		--color=yes \
+		--html=./pytest_report.html --self-contained-html \
+		--cov=pytwine \
+		--cov-report term \
+		--cov-report html \
+		--doctest-modules -v \
+			$(abs_mkfile_dir)/pytwine \
+			$(abs_mkfile_dir)/tests
+
 python-test:
 	$(create_env)
 	$(activate_env) && \
-		pytest \
-			--color=yes \
-			--html=./pytest_report.html --self-contained-html \
-			--cov=pytwine \
-			--cov-report term \
-			--cov-report html \
-			--doctest-modules -v \
-			  $(abs_mkfile_dir)/pytwine \
-			  $(abs_mkfile_dir)/tests
+		$(python_test_cmd)
+
+
+perl_test_cmd = $(PERL_PROVE) --verbose --comments $(abs_mkfile_dir)/t/*.t :: \
+		--source-dir $(abs_mkfile_dir)
 
 perl-test:
 		tmpdir=`$(call create_tmpdir,perltest)` && \
 		cd $$tmpdir                             && \
 		$(create_env)                           && \
 		$(activate_env) &&  set -x && \
-		prove --verbose --comments $(abs_mkfile_dir)/t/*.t :: --source-dir $(abs_mkfile_dir) || res=$$? && \
+		$(perl_test_cmd) || res=$$? && \
 		rm -rf $$tmpdir && set +x && exit $$res
 
 test: python-test perl-test
 
+# if you are happy to run in working dir,
+# and know all dependencies are installed:
+quick-test: quick-python-test quick-perl-test
+
+quick-perl-test:
+	$(perl_test_cmd)
+
+quick-python-test:
+	$(python_test_cmd)
+
 test-deps:
-	python3 -m pip install `$(abs_mkfile_dir)/print_test_deps.py $(abs_mkfile_dir)`
+	$(PIP) install `$(abs_mkfile_dir)/print_test_deps.py $(abs_mkfile_dir)`
 	sudo apt-get update
 	sudo apt-get install libcarp-assert-perl
 
 docs:
 	$(create_env)
-	$(activate_env) && python3 -m pip install -e "$(abs_mkfile_dir)[docs]" && \
-			cd $(abs_mkfile_dir)/docs && \
-			rm -rf source/_autosummary && \
-			make clean html
+	$(activate_env) && $(PIP) install -e "$(abs_mkfile_dir)[docs]" && \
+		cd $(abs_mkfile_dir)/docs && \
+		rm -rf source/_autosummary && \
+		make clean html
+
+quick-docs:
+	cd $(abs_mkfile_dir)/docs && \
+		make html
 
 docs-clean:
 	rm -rf $(abs_mkfile_dir)/docs/source/_autosummary \

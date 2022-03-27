@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 
+"""setup script."""
+
 import os
 import sys
 from setuptools import setup
 
 def get_version():
-  """Get version."""
+  """Get version.
+
+  'source of truth' for the package version is
+  the ``pytwine/_version.py`` file.
+  """
 
   sys.path.append("pytwine")
   import _version # type: ignore
@@ -17,21 +23,22 @@ def read(fname):
   with open(fpath, encoding="utf8") as ifp:
     return ifp.read()
 
-setup(name='pytwine',
-      entry_points={
+setup(
+    name='pytwine',
+    author='Arran D. Stewart',
+    author_email='arran.stewart@uwa.edu.au',
+    entry_points={
           'console_scripts': [
                 # thin wrapper around pytwine.cli.cli_twine
                 'pytwine = pytwine.scripts:pytwine_script'
               ] },
-      version = get_version(),
-      description='Reports with embedded python computations',
-      author='Arran D. Stewart',
-      author_email='arran.stewart@uwa.edu.au',
-      url='https://github.com/arranstewart/pytwine',
-      packages=['pytwine'],
-      install_requires = ['markdown'],
-      python_requires = '>=3.6',
-      extras_require = {'test': [ \
+    version = get_version(),
+    description='Reports with embedded python computations',
+    url='https://github.com/arranstewart/pytwine',
+    packages=['pytwine'],
+    install_requires = ['markdown'],
+    python_requires = '>=3.6',
+    extras_require = {'test': [ \
                             'pytest',
                             'pytest-cov',
                             'pytest-html',
@@ -41,9 +48,9 @@ setup(name='pytwine',
                             'sphinx >= 4.0'
                             ]
                        },
-      license='LICENSE',
-      long_description = read('README.md'),
-      classifiers=[
+    license='LICENSE',
+    long_description = read('README.md'),
+    classifiers=[
         'Development Status :: 1 - Planning',
         'Topic :: Text Processing :: Markup',
         'Intended Audience :: Science/Research',

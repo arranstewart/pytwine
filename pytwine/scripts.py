@@ -2,7 +2,9 @@
 """
 Functions that get invoked by installed scripts.
 
-Thin wrappers around API functionality.
+Wrappers around functions in :mod:`pytwine.cli`
+which add command-line argument parsing.
+
 """
 
 import sys
@@ -10,12 +12,13 @@ import sys
 from optparse import OptionParser
 
 import pytwine
-from .cli import twine
+from .cli   import cli_twine
+from .core  import TwineExitStatus
 
-def twine_script() -> None:
+def pytwine_script() -> None:
   """
-  Implement the `twine` script: parse options, then process
-  a document.
+  Implement the ``pytwine`` script: parse command line options,
+  process a document, exit with an appriorate exit status.
   """
 
   # Command line options
@@ -65,7 +68,7 @@ def twine_script() -> None:
 
   if len(args) > 2:
     parser.print_help()
-    sys.exit(1)
+    sys.exit(TwineExitStatus.BAD_SCRIPT_ARGS)
 
   try:
     infile : str = args.pop(0)
@@ -79,7 +82,8 @@ def twine_script() -> None:
     outfile = None # type: ignore
 
   opts_dict = vars(options)
-  twine(infile, outfile, **opts_dict)
+  res = cli_twine(infile, outfile, **opts_dict)
+  sys.exit(res.value)
 
 #def publish():
 #    if len(sys.argv) == 1:

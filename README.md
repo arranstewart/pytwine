@@ -23,5 +23,9 @@ $ python3 -m pip install https://github.com/arranstewart/pytwine/archive/refs/he
 
 Typical is to give files a `.pmd` extension, and process them into `.md`.
 
+## Similar projects
 
+- [Pweave](https://github.com/mpastell/Pweave)
+- [knitty](https://github.com/kiwi0fruit/knitty)
+- [cog](https://github.com/nedbat/cog)
 

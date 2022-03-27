@@ -235,10 +235,10 @@ class MarkdownParser(Parser):
 
     ``` .python someproperty=foo
 
-  Closing triple must match opening.
+  See <https://spec.commonmark.org/0.30/#fenced-code-blocks>
 
-  i.e., if we start a code block with backticks,
-  then tildes won't end it.
+  The closing "fence" must match the opening "fence": i.e., if we start a code
+  block with backticks, then tildes won't end it.
 
   (And we can therefore include code like::
 
@@ -248,14 +248,21 @@ class MarkdownParser(Parser):
 
   safely inside it.)
 
+  Fenced code blocks are only parsed when they appear at the root level –
+  they aren't recognized if nested inside lists or block-quotes, for
+  example. (But there's nothing to stop your Python code block from
+  outputting indented content which will be inside a list or block
+  quote.)
+
   """
 
   def __init__(self, file=None, string=None):
     Parser.__init__(self, file, string)
 
     # see tests/test_parser.py/test_tildes_can_start_block
-    self.codeblock_begin = r"^[`~]{3,}\s*(?:|\.|)python(?:;|,|)\s*(.*?)(?:\}|\s*)$"
-    self.codeblock_end = r"^(`|~){3,}\s*$"
+    # two groups: the fence start (e.g. ``` or ```` or ~~~~)
+    #   and the stuff that comes after "python"
+    self.codeblock_begin = r"^([`~]{3,})\s*(?:|\.|)python(?:;|,|)\s*(.*?)(?:\}|\s*)$"
 
   def _is_codeblock_start(self, line):
     """ returns a boolean-ish result when a line matches
@@ -264,16 +271,19 @@ class MarkdownParser(Parser):
     return re.match(self.codeblock_begin, line)
 
   def _is_codeblock_end(self, line):
-    """ returns a boolean-ish result when a line matches
-    ``codeblock_end`` pattern.
+    """ returns a boolean-ish result when a line is
+    a codeblock end.
 
     Should only be called when we're in a code block
     (i.e. when self.block_start_line is not None)
     """
     assert self.block_start_line is not None
 
-    blockStart = self.block_start_line[:3]
+    # find out how the block started (three backticks? four tildes):
+    # that's how it must end.
+    regex_result = re.match(self.codeblock_begin, self.block_start_line)
+    fence_chars, _ = regex_result.groups()
 
-    return line.strip() == blockStart
+    return line.strip() == fence_chars
 
 

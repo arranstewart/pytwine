@@ -5,16 +5,21 @@ scripts and tools.
 
 import sys
 
+from .core        import TwineExitStatus
 from .parsers     import MarkdownParser
 from .processors  import PythonProcessor
 
-def twine(infile_name : str, outfile_name : str = None) -> None :
+def cli_twine(infile_name : str, outfile_name : str = None) -> TwineExitStatus :
   """
   Process a markdown document and write output to a file
 
   Parameters:
     infile_name: input filename
     outfile_name: output filename
+
+  Returns:
+    an aptional int (actually, a :class:`TwineExitStatus`) that
+    can be passed to sys.exit.
   """
 
   with open(infile_name, encoding="utf8") as infile:
@@ -30,7 +35,10 @@ def twine(infile_name : str, outfile_name : str = None) -> None :
 
     with get_out() as outfile:
       processor = PythonProcessor(outfile)
-      processor.twine(chunks)
+      result = processor.twine(chunks)
+
+    return result
+
 
 
 

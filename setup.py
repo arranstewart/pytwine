@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-from setuptools import setup
 import os
 import sys
-
+from setuptools import setup
 
 def get_version():
   """Get version."""
@@ -13,13 +12,16 @@ def get_version():
   return _version.__version__
 
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+  "get contents"
+  fpath = os.path.join(os.path.dirname(__file__), fname)
+  with open(fpath, encoding="utf8") as ifp:
+    return ifp.read()
 
 setup(name='pytwine',
       entry_points={
           'console_scripts': [
-                # thin wrapper around pytwine.twine
-                'pytwine = pytwine.scripts:twine_script'
+                # thin wrapper around pytwine.cli.cli_twine
+                'pytwine = pytwine.scripts:pytwine_script'
               ] },
       version = get_version(),
       description='Reports with embedded python computations',
@@ -29,8 +31,15 @@ setup(name='pytwine',
       packages=['pytwine'],
       install_requires = ['markdown'],
       python_requires = '>=3.6',
-      extras_require = {'test': ['coverage', 'pytest', 'hypothesis'],
-                        'docs': ['sphinx >= 4.0']
+      extras_require = {'test': [ \
+                            'pytest',
+                            'pytest-cov',
+                            'pytest-html',
+                            'hypothesis'
+                            ],
+                        'docs': [ \
+                            'sphinx >= 4.0'
+                            ]
                        },
       license='LICENSE',
       long_description = read('README.md'),

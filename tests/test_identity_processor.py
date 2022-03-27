@@ -1,4 +1,8 @@
 
+"""
+test the IdentityProcessor
+"""
+
 from io import StringIO
 from typing import (
     List,
@@ -6,14 +10,16 @@ from typing import (
 )
 
 from hypothesis import given, strategies as st
-from hypothesis.strategies._internal.utils import cacheable, defines_strategy
-from hypothesis.strategies._internal import SearchStrategy
+
+from custom_hypothesis_strats import doc_chunks, code_chunks
 
 from pytwine.core import Chunk, DocChunk, CodeChunk, merge_docchunks
 from pytwine.parsers import MarkdownParser
 from pytwine.processors import IdentityProcessor
 
 def test_simple_doc():
+  "test a simple document"
+
   mydoc = """\
 ```python .important foo=bar
 print("aaa")
@@ -32,47 +38,16 @@ print(2)
 
   assert sink.getvalue() == mydoc, "should reverse parser"
 
-@defines_strategy(force_reusable_values=True)
-@cacheable
-def doc_chunks(
-) -> SearchStrategy[DocChunk]:
-  """Returns a strategy that generates random DocChunks.
-
-  'number' and 'startLineNum' are always set to -1.
-  """
-
-  mkDocChunk = lambda s : DocChunk(contents=s+'\n', number=-1, startLineNum=-1)
-  return st.builds(mkDocChunk, st.text(min_size=1))
-
-def mkCodeChunk(s : str) -> CodeChunk:
-  s = repr(s)
-  python_code = f'print({s})\n'
-  return CodeChunk(contents=python_code, number=-1, startLineNum=-1,
-                    block_start_line="```python\n",
-                    block_end_line="```\n"
-            )
-
-
-@defines_strategy(force_reusable_values=True)
-@cacheable
-def code_chunks(
-) -> SearchStrategy[CodeChunk]:
-  """Returns a strategy that generates random CodeChunks.
-
-  'number' and 'startLineNum' are always set to -1.
-  """
-  return st.builds(mkCodeChunk, st.text())
 
 # true if all are docs
 def all_are_docs(xs : List[Chunk]) -> bool:
-  for x in xs:
-    if x.chunkType != "doc":
-      return False
-  return True
+  "for all xs, x is a docchunk"
 
+  return all(x.chunkType == "doc" for x in xs)
 
-# when we find two adjoining doc chunks, merge them
 def merge_runs(chunks : List[Chunk]) -> List[Chunk]:
+  "when we find two adjoining doc chunks, merge them"
+
   if not chunks:
     return []
 
@@ -124,8 +99,9 @@ def merge_runs(chunks : List[Chunk]) -> List[Chunk]:
 
   return res
 
-# set nums to -1
 def fixChunk(c : Chunk) -> Chunk:
+  "set nums to -1"
+
   if c.chunkType == "doc":
     return DocChunk(c.contents, -1, -1)
   if c.chunkType == "code":
@@ -137,13 +113,29 @@ def fixChunk(c : Chunk) -> Chunk:
 
 
 def chunksToDoc(chunks):
+  "use IdentityProcessor to turn chunks into a string"
+
   sink = StringIO()
   processor = IdentityProcessor(sink)
   processor.twine(chunks)
   return sink.getvalue()
 
 @given(st.lists( st.one_of(doc_chunks(), code_chunks()) ))
-def xxtest_doc_chunkys(chunks):
+def test_IdentityProcessor_roundtrips_chunks(chunks):
+  r"""
+  Given an arbitrary list of chunks, we can turn those
+  into a string with the IdentityProcessor, then parse
+  the resulting string back into chunks.
+
+  The returned chunks should equal the original ones,
+  subject to:
+
+  - line-endings all being converted to '\n'
+  - adjonining doc chunks being merged
+  - if our original chunks didn't have correct chunk.number
+    and startLineNums, we'll have to massage the
+    final chunks (e.g. setting everything to -1).
+  """
 
   normalized_chunks = merge_runs(chunks)
 

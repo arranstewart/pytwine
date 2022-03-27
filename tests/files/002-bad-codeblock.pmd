@@ -1,0 +1,8 @@
+```python .important foo=bar
+import
+print
+```
+normal contents
+```.python
+print(2)
+```

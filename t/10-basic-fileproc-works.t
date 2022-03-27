@@ -34,8 +34,12 @@ sub markdown_filename {
 }
 
 foreach my $testfile (@testfiles) {
-  my $test_res = `pytwine $testfile`;
-  ok( $? == 0, "script ran ok");
+  my $test_res = `pytwine $testfile 2>/dev/null`;
+  if ($testfile =~ /bad/) {
+    ok( $? != 0, "script gave error, as expected");
+  } else {
+    ok( $? == 0, "script ran ok");
+  }
   my $md_file = markdown_filename($testfile);
   my $expected = slurp($md_file);
   is($test_res, $expected, "expected result for ${testfile}");

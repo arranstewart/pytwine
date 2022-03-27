@@ -62,3 +62,10 @@ docs/source/pytwine.rst
 .hypothesis
 _autosummary
 *.XXX
+.coverage
+__pycache__/
+.pytest_cache/
+/htmlcov/
+pytest_report.html
+/tags
+/docs/source/README.md

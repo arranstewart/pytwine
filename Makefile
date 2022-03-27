@@ -20,7 +20,14 @@ create_tmpdir=mktemp -d --tmpdir pytwine-$(1)-tmp-XXXXXXXXXX
 
 python-test:
 	$(create_env)
-	$(activate_env) && pytest --doctest-modules -v $(abs_mkfile_dir)
+	$(activate_env) && \
+		pytest \
+			--color=yes \
+			--html=./pytest_report.html --self-contained-html \
+			--cov=pytwine \
+			--cov-report term \
+			--cov-report html \
+			--doctest-modules -v $(abs_mkfile_dir)
 
 perl-test:
 		tmpdir=`$(call create_tmpdir,perltest)` && \

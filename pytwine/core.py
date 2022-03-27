@@ -1,9 +1,9 @@
 
 """
-Core classes: chunks of document.
+Core classes: chunks of document, exit statuses.
 """
 
-
+from enum import Enum
 from typing import NamedTuple, List
 
 class Chunk(NamedTuple):
@@ -132,4 +132,22 @@ startLineNum=10, block_start_line='``` python', block_end_line='```')
              self.block_end_line == value.block_end_line
     except AttributeError:
       return False
+
+
+class TwineExitStatus(Enum):
+  """Some exit statuses.
+
+  Given a TwineExitStatus, its .value is either
+  `None` or an `int`, and can be passed to sys.exit.
+  """
+
+  SUCCESS = None
+  "success"
+
+  BAD_SCRIPT_ARGS = 1
+  "wrong number, or, bad arguments sypplied to script"
+
+  BLOCK_COMPILATION_ERROR = 2
+  "an exception was encountered trying to compile a code block"
+
 

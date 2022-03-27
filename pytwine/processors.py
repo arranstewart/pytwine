@@ -6,13 +6,15 @@ documents.
 """
 
 import sys
+import textwrap as tw
+import traceback
 
 from typing import List, TextIO, cast, Dict, Any
 
 # ?? use binary??
 from io import StringIO
 
-from .core import Chunk, CodeChunk
+from .core import Chunk, CodeChunk, TwineExitStatus
 
 class AnnotatedCodeChunk(CodeChunk):
   """ just used for casting, so that mypy won't complain
@@ -70,10 +72,25 @@ class IdentityProcessor(Processor):
         self._write(chunk.block_end_line)
 
 
+def _get_traceback_text(exc_type, value, tb) -> str:
+  """return the text that would be printed by
+  traceback.print_exception.
+  """
+
+  sio = StringIO()
+  traceback.print_exception(exc_type, value, tb, file=sio)
+  return sio.getvalue()
+
+
 class PythonProcessor(Processor):
   """
   Processor that tries to run all code blocks as Python.
+
+  Uncompileable code blocks just get omitted from the output.
+
+  TODO: put an error into the output
   """
+  # TODO: put an error into the output
 
   def __init__(self, sink: TextIO, log: TextIO = sys.stderr):
     """
@@ -84,6 +101,7 @@ class PythonProcessor(Processor):
     self._sink = sink
     self.log = log
     self.globals : Dict[Any,Any] = {}
+    self.exceptions_encountered : List[Exception] = []
 
 
   ######
@@ -98,15 +116,42 @@ class PythonProcessor(Processor):
       code_obj = compile(chunk.contents, '<string>', 'exec')
       exec(code_obj, self.globals)
       sys.stdout = old_stdout
-    except Exception as ex:
+    except SyntaxError as ex:
+      (exc_type, value, tb) = sys.exc_info()
+      self.exceptions_encountered.append(ex)
+      indentation = " " * 4
+      block_excerpt = tw.indent("\n".join(chunk.contents.splitlines()[:3]),
+                                indentation)
+      tb_text = _get_traceback_text(exc_type, value, tb)
+
+      print(f"compilation exception while processing code block no. {chunk.number},",
+            f"beginning at line {chunk.startLineNum} of input file:\n",
+            "\n" + block_excerpt,
+            "\n\n    ...\n",
+            file=self.log)
+      hbar = '-' * 40
+      print(tw.indent(hbar + "\n" + tb_text, indentation),
+            file=self.log)
+
+    except KeyError as ex:
       print("exception occurred :/", ex)
     finally:
       sys.stdout = old_stdout
 
     return tmp_stdout.getvalue()
 
-  def twine(self, chunks : List[Chunk] ) -> None:
-    """WORK IN PROGRESS"""
+  def twine(self, chunks : List[Chunk] ) -> TwineExitStatus:
+    """WORK IN PROGRESS - process chunks and write to sink.
+
+    in case of errors, returns a :class:`TwineExitStatus`;
+    its .value attribute is either int or None, and
+    can be passed to sys.exit as a status code.
+
+    Effects:
+      - output is written to the ``sink`` arrgument
+        passed to the constructor.
+
+    """
 
     for chunk in chunks:
 
@@ -118,6 +163,14 @@ class PythonProcessor(Processor):
         result = self._runcode(chunk)
         self._write(result)
 
+    if self.exceptions_encountered:
+      num_exceptions = len(self.exceptions_encountered)
+      print("Encountered", num_exceptions,
+            "exceptions while processing input file",
+            file=self.log)
+      return TwineExitStatus.BLOCK_COMPILATION_ERROR
+
+    return TwineExitStatus.SUCCESS
 
 #class Twiner:
 #

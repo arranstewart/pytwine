@@ -11,6 +11,12 @@ and [cog][cog].
 [pweave]: https://github.com/mpastell/Pweave
 [cog]: https://github.com/nedbat/cog
 
+## Status
+
+**pre-alpha software – use at own risk**
+
+This software is a work in progress, and is not yet feature-complete.
+
 ## Requirements
 
 A Python interpreter, >= 3.6.

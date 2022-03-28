@@ -99,9 +99,6 @@ activate_env = if [ -z "$$VIRTUAL_ENV" ]; then . $(ACTIVATE); fi
 
 create_tmpdir = $(PERL) -e 'use File::Temp "tempdir"; $$dir = tempdir("pytwine-tmp-XXXXXXXXXX", CLEANUP => 0, TMPDIR => 1 ); print $$dir;'
 
-help: ## print targets
-	@$(PYTHON) -c "$$print_help_pyscript" < $(MAKEFILE_LIST)
-
 python_test_cmd = \
 	$(PYTEST) \
 		--color=yes \

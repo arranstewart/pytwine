@@ -6,9 +6,7 @@
 	dev-deps-print dev-deps-install dev-deb-install dev-all-install \
 	docs docs-clean servedocs \
 	dist install lint \
-	clean clean-build clean-pyc clean-test clean-tags
-
-
+	clean clean-build clean-pyc clean-test clean-tags clean-env
 
 .DEFAULT_GOAL := help
 
@@ -16,18 +14,46 @@
 # user-facing vars
 # intended to be overridden if desired
 
-SHELL = bash
-PYTHON = python3
-PYTEST = pytest
+PERL = perl
 PERL_PROVE = prove
 PIP = python3 -m pip
 PYLINT = pylint
+PYTHON = python3
+PYTEST = pytest
+
+# set VERBOSE=1 (either here or at command line)
+# to get bash -x
+#VERBOSE=
 
 # end vars
 #####
 
+#######
+# vpath
+
+VPATH = $(abs_mkfile_dir)
+
 # evaluate this _once_
 abs_mkfile_dir :=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
+#####
+# detect OS
+
+# plausible values: Windows, Darwin
+ifeq ($(OS),Windows_NT)
+    detected_OS := Windows
+else
+    detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
+endif
+
+####
+# shell
+
+ifeq ($(VERBOSE),1)
+SHELL=bash -x
+else
+SHELL=bash
+endif
 
 #####
 # inline python scripts
@@ -35,31 +61,43 @@ abs_mkfile_dir :=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 define print_help_pyscript
 import re, sys
 
+res=[]
 for line in sys.stdin:
-	match = re.match(r'^([a-zA-Z_-]+):.*?## (.*)$$', line)
-	if match:
-		target, help = match.groups()
-		print("%-20s %s" % (target, help))
+  match = re.match(r'^([a-zA-Z_-]+):.*?## (.*)$$', line)
+  if match:
+    target, help = match.groups()
+    res.append( (target,help) )
+res.sort()
+for (target,help) in res:
+    print("%-20s %s" % (target, help))
 endef
 export print_help_pyscript
 
-# quotable in single quotes
+# this Python fragment can be put in single quotes for
+# use in bash
 print_dev_deps_pyscript = import sys, os; sys.path.insert(0, "$(abs_mkfile_dir)"); import setup; test_deps=setup.setup_args["extras_require"]["test"]; print(" ".join(test_deps))
 
-# quotable in single quotes
+# this Python fragment can be put in single quotes for
+# use in bash
 print_doc_deps_pyscript = import sys, os; sys.path.insert(0, "$(abs_mkfile_dir)"); import setup; test_deps=setup.setup_args["extras_require"]["docs"]; print(" ".join(test_deps))
 
 # end py scripts
 #####
 
+####
+# virtual env definitions.
 
-create_env = if [ ! -e activate ]; then $(abs_mkfile_dir)/venv_init.sh $(abs_mkfile_dir); fi
+create_env = if [ ! -d env ] ; then python3 -m venv env; fi
 
-activate_env = if [ -z "$$VIRTUAL_ENV" ]; then . ./activate; fi
+ifeq ($(detected_OS),Windows)
+ACTIVATE = ./env/Scripts/activate
+else
+ACTIVATE = ./env/bin/activate
+endif
 
-# use like this:
-# $(call create_tmpdir,testtype)
-create_tmpdir=mktemp -d --tmpdir pytwine-$(1)-tmp-XXXXXXXXXX
+activate_env = if [ -z "$$VIRTUAL_ENV" ]; then . $(ACTIVATE); fi
+
+create_tmpdir = $(PERL) -e 'use File::Temp "tempdir"; $$dir = tempdir("pytwine-tmp-XXXXXXXXXX", CLEANUP => 0, TMPDIR => 1 ); print $$dir;'
 
 help: ## print targets
 	@$(PYTHON) -c "$$print_help_pyscript" < $(MAKEFILE_LIST)
@@ -76,7 +114,20 @@ python_test_cmd = \
 			$(abs_mkfile_dir)/tests
 
 perl_test_cmd = $(PERL_PROVE) --verbose --comments $(abs_mkfile_dir)/t/*.t :: \
-		--source-dir $(abs_mkfile_dir)
+	--source-dir $(abs_mkfile_dir)
+
+
+#######
+# targets
+
+
+help: ## print available targets
+	@$(PYTHON) -c "$$print_help_pyscript" < $(MAKEFILE_LIST)
+
+# except on windows, we don't bother
+venv-init: ## create a venv if none already, install pip and wheel
+	$(create_env)
+	$(activate_env) && $(PIP) install --upgrade pip wheel
 
 test: test-python test-perl ## run Perl and Python tests
 
@@ -86,25 +137,50 @@ test-python: ## run Python tests in a venv
 	$(activate_env) && $(PIP) install -e "$(abs_mkfile_dir)"
 	$(activate_env) && $(python_test_cmd)
 
-test-perl: ## run Perl-based tests from temp dir
-		tmpdir=`$(call create_tmpdir,perltest)` && \
-		cd $$tmpdir                             && \
-		$(create_env)                           && \
-		$(activate_env)                         && \
-		$(PIP) install -e "$(abs_mkfile_dir)[test]" && \
-		set -x && $(perl_test_cmd) || res=$$? && \
-		rm -rf $$tmpdir && set +x && exit $$res
-
 # if you are happy to run in working dir,
 # and know all dependencies are installed:
 
 quick-test: quick-test-python quick-test-perl ## run tests quickly with default interpreters
 
+quick-test-python: ## run tests quickly with the default Python
+	$(activate_env) && $(python_test_cmd)
+
+# path to 'prove' does not seem to be found
+# when using bash on Windows -- so use pwsh.
+#
+# also, virtual env and tmpdirs probably not
+# worth the effort, so let `pip` install things globally.
+
+# perl tests on Windows
+ifeq ($(detected_OS),Windows)
+
+test-perl: SHELL=pwsh.exe
+test-perl:
+	$(PIP) install -e "$(abs_mkfile_dir)[test]"
+	$(PIP) install -e "$(abs_mkfile_dir)"
+	$(perl_test_cmd)
+
+quick-test-perl: SHELL=pwsh.exe
+quick-test-perl:
+	$(perl_test_cmd)
+
+# perl tests on non-windows:
+else
+
+test-perl: ## run Perl-based tests from temp dir
+	tmpdir=`$(create_tmpdir)`               && \
+	cd $$tmpdir                             && \
+	$(create_env)                           && \
+	$(activate_env)                         && \
+	$(PIP) install -e "$(abs_mkfile_dir)[test]" && \
+	set -x && $(perl_test_cmd) || res=$$?   && \
+	rm -rf $$tmpdir && set +x && exit $$res
+
 quick-test-perl: ## run Perl-based tests quickly with the default interpreters
 	$(activate_env) && $(perl_test_cmd)
 
-quick-test-python: ## run tests quickly with the default Python
-	$(activate_env) && $(python_test_cmd)
+# end perl tests
+endif
 
 # this variable only exists when something with 'dev' in the
 # name is the goal.
@@ -172,8 +248,8 @@ clean-build: ## remove build artifacts
 	find . -name '*.egg' -exec rm -f {} +
 
 clean-pyc: ## remove Python file artifacts
-	find . -name '*.pyc' -o -name '*.pyo' -exec rm -f {} +
-	find . -name '*~' -o -name '__pycache__' -o -name .mypy_cache -exec rm -rf {} +
+	find . \( -name '*.pyc' -o -name '*.pyo' \) -exec rm -f {} +
+	find . \( -name '*~' -o -name '__pycache__' -o -name .mypy_cache \) -exec rm -rf {} +
 
 clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
@@ -182,6 +258,9 @@ clean-test: ## remove test and coverage artifacts
 		htmlcov/       \
 		.hypothesis    \
 		.pytest_cache
+
+clean-env: ## remove 'env' dir
+	rm -rf env
 
 clean-tags: ## remove tagfiles
 	rm -rf tags

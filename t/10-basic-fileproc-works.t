@@ -12,7 +12,15 @@ assert( $ARGV[0] eq "--source-dir" );
 my $source_dir = $ARGV[1];
 my @testfiles = glob "${source_dir}/tests/files/*.pmd";
 
-sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
+sub trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
+
+# Are we running on windows?
+my $windows=($^O=~/Win/)?1:0;
+
+my $devnull="/dev/null";
+if ($windows) {
+  $devnull = "nul";
+}
 
 assert( scalar @testfiles >= 1, "should be at least 1 .pmd test file" );
 
@@ -34,7 +42,7 @@ sub markdown_filename {
 }
 
 foreach my $testfile (@testfiles) {
-  my $test_res = `pytwine $testfile 2>/dev/null`;
+  my $test_res = `pytwine $testfile 2>$devnull`;
   if ($testfile =~ /bad/) {
     ok( $? != 0, "script gave error, as expected");
   } else {

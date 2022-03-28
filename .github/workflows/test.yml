@@ -17,42 +17,67 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    name: test ${{ matrix.os }}, python ${{ matrix.python_version }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.6', '3.9', '3.10']
-
+        os: [ubuntu-20.04, macOS-latest, windows-latest]
+        python_version: ['3.6', '3.9', '3.10']
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python_version }}
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.python_version }}
 
-      - name: print python version, noisily
+      - name: install carp and prove
+        uses: perl-actions/install-with-cpm@stable
+        with:
+          install: |
+            Carp::Assert
+            Test::Harness
+
+      - name: info - python version
         run: |
           python3 --version
 
-      - name: install test dependencies
+      - name: info - perl version
         run: |
-          make dev-all-install
+          perl --version
 
+      - name: info - make version
+        run: |
+          make --version
+
+      - name: info - prove version
+        run: |
+          prove --version
+
+      - name: check prove works
+        run: |
+          prove -l t/03*
 
       - name: test install from github branch zip works
+        # on windows: just doesn't seem to work, give up
+        # pip gives errors like:
+        #   ERROR: Could not install packages due to an OSError:
+        #   [Errno 2] No such file or directory:
+        #   'C:\\tmp\\pytwine-zip-install-tmp-fELxgiIQvz\\pytwine.zip'
+        if: ${{ ! startsWith(matrix.os, 'windows') }}
+        shell: bash
         run: |
           branch="${{ github.head_ref || github.ref_name }}"
           # "
-          python3 -m venv env && . env/bin/activate
-          python3 -m pip install wheel
-          PERSONAL_TOKEN="${{ secrets.PERSONAL_TOKEN }}" ./test_zip_install.sh "${branch}"
+          make VERBOSE=1 clean-env clean venv-init
+          PERSONAL_TOKEN="${{ secrets.PERSONAL_TOKEN }}" perl ./test_zip_install.pl "${branch}"
 
       - name: run pytest tests
         run: |
-          rm -rf env
-          make test-python
+          make VERBOSE=1 clean-env clean
+          make VERBOSE=1 test-python
 
       - name: archive test reports
         uses: actions/upload-artifact@v2
@@ -66,14 +91,14 @@ jobs:
       - name: run perl tests
         if: always()
         run: |
-          rm -rf env
-          make test-perl
+          make VERBOSE=1 clean-env clean
+          make VERBOSE=1 test-perl
 
       - name: build py docs
         if: always()
         run: |
-          rm -rf env
-          make docs
+          make VERBOSE=1 clean-env clean
+          make VERBOSE=1 docs
 
       - name: archive docs
         if: always()

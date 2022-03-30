@@ -16,7 +16,7 @@ my @res = `pytwine -h`;
 ok( $? == 0, "pytwine -h works");
 
 my $line = $res[0];
-my $expected = "Usage: pytwine [options] [sourcefile]";
+my $expected = "Usage: pytwine [options] [sourcefile [outfile]]";
 
 ok( trim($line) eq $expected, "first line of help is as expected");
 

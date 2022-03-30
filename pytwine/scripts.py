@@ -9,162 +9,93 @@ which add command-line argument parsing.
 
 import sys
 
+from typing import Optional, TextIO, cast
 from optparse import OptionParser
 
 import pytwine
 from .cli   import cli_twine
 from .core  import TwineExitStatus
 
+def _open_or_fallback( file_path : Optional[str], mode: str, fallback: Optional[TextIO] ):
+  """
+  Arguments:
+    file_path: a file path to open, or None to use the fallback.
+    mode: mode to open with (e.g. "w" or "r")
+    fallback: what to use when file_path is None; when context
+      finishes, this *won't* close.
+  """
+
+  if file_path is None:
+    fallback.close = lambda : None # type: ignore
+    return fallback
+
+  # pylint: disable=consider-using-with
+  return open(file_path, mode, encoding="utf8")
+
+
 def pytwine_script() -> None:
   """
   Implement the ``pytwine`` script: parse command line options,
   process a document, exit with an appriorate exit status.
+
+  Option stuff:
+    - if no sourcefile given, or "-" given, use stdin
+    - if no outfile given, or "-" given, use stdout
+
   """
 
   # Command line options
-  parser = OptionParser(usage="pytwine [options] [sourcefile]",
+  parser = OptionParser(usage="pytwine [options] [sourcefile [outfile]]",
                         version="pytwine " + pytwine.__version__)
 #    parser.add_option("-f", "--format", dest="doctype", default=None,
 #                      help="The output format. Available formats: " +
 #                             pytwine.PwebFormats.shortformats() +
 #                           " Use pytwine -l to list descriptions or see
 #                             http://mpastell.com/pytwine/formats.html")
-#    parser.add_option("-i", "--input-format", dest="informat", default=None,
-#                      help="Input format: noweb, markdown, notebook or
-#                      script")
-#    parser.add_option("-k", "--kernel", dest="kernel", default='python3',
-#                      help="Jupyter kernel used to run code: default is
-#                      python3")
-#    parser.add_option("-o", "--output", dest="output", default=None,
-#                      help="Name of the output file")
-#    parser.add_option("-l", "--list-formats", dest="listformats",
-#                       action="store_true", default=False,
-#                      help="List output formats")
-#    parser.add_option("-m", "--matplotlib", dest="plot", default=True,
-#                         action="store_false",
-#                      help="Disable matplotlib")
-#    parser.add_option("-d", "--documentation-mode", dest="docmode",
-#                      action="store_true", default=False,
-#                      help="Use documentation mode, chunk code and results
-#                      will be loaded from cache and inline code will be
-#                      hidden")
-#    parser.add_option("-c", "--cache-results", dest="cache",
-#                      action="store_true", default=False,
-#                      help="Cache results to disk for documentation mode")
-#    parser.add_option("-F", "--figure-directory", dest="figdir", default='figures',
-#                      help="Directory path for matplolib graphics: Default 'figures'")
-#    parser.add_option("--cache-directory", dest="cachedir", default='cache',
-#                      help="Directory path for cached results used in
-#                      documentation mode: Default 'cache'")
-#    parser.add_option("-g", "--figure-format", dest="figformat", default=None,
-#                      help="Figure format for matplotlib graphics: Defaults to
-#                      'png' for rst and Sphinx html documents and 'pdf' for
-#                      tex")
-#    parser.add_option("-t", "--mimetype", dest="mimetype", default=None,
-#                      help="Source document's text mimetype. This is used to set cell " +
-#                           "type in Jupyter notebooks")
-#
+
+  parser.add_option("-o", "--output", dest="output", default=None,
+                    help="Name of the output file. (Overrides any arguments)")
+  parser.add_option("-d", "--debug", dest="debug", action="store_true",
+                    help="print additional debugging information to standard error")
+
   (options, args) = parser.parse_args()
+  options_dict = vars(options)
 
   if len(args) > 2:
     parser.print_help()
     sys.exit(TwineExitStatus.BAD_SCRIPT_ARGS)
 
+  infile_path  : Optional[str] = None
+  outfile_path : Optional[str] = None
+
   try:
-    infile : str = args.pop(0)
+    infile_path = args.pop(0)
   except IndexError:
-    infile = None # type: ignore
+    pass
 
-  ### TODO: allow "-o" for output as well
+  # empty string and "-" become stdin
+  if not infile_path or infile_path == "-":
+    infile_path = None
+
   try:
-    outfile : str = args.pop(0)
+    outfile_path = args.pop(0)
   except IndexError:
-    outfile = None # type: ignore
+    pass
 
-  opts_dict = vars(options)
-  res = cli_twine(infile, outfile, **opts_dict)
-  sys.exit(res.value)
+  if "output" in options_dict and options_dict["output"] is not None:
+    outfile_path = options_dict["output"]
+  del options_dict["output"]
 
-#def publish():
-#    if len(sys.argv) == 1:
-#        print("Publish a python script. Part of pytwine %s, use -h for help" %
-#                   pytwine.__version__)
-#        sys.exit()
-#
-#    parser = OptionParser(usage="pypublish [options] sourcefile",
-#                       version="Part of pytwine " + pytwine.__version__)
-#    parser.add_option("-f", "--format", dest="format", default='html',
-#                      help="Output format html or pdf, pdf output requires
-#                      pandoc and pdflatex")
-#    parser.add_option("-e", "--latex_engine", dest = "latex_engine", default =
-#                     "pdflatex",
-#                      help = "The command for running latex.")
-#    parser.add_option("-t", "--theme", dest = "theme", default = "skeleton",
-#                      help = "Theme for HTML output")
-#    parser.add_option("-o", "--output", dest="output", default=None,
-#                      help="Name of the output file")
-#
-#    (options, args) = parser.parse_args()
-#
-#    try:
-#        infile = args[0]
-#    except IndexError:
-#        infile = ""
-#
-#    pytwine.publish(infile, options.format, options.theme,
-#                     options.latex_engine, options.output)
-#
-#
-#def tangle():
-#    if len(sys.argv) == 1:
-#        print("This is ptangle %s, enter ptangle -h for help" %
-#                 pytwine.__version__)
-#        sys.exit()
-#
-#    parser = OptionParser(usage="ptangle sourcefile", version="pytwine " +
-#                           pytwine.__version__)
-#    parser.add_option("-i", "--input-format", dest="informat", default=None,
-#                      help="Input format: noweb, markdown, notebook or
-#                      script")
-#
-#    (options, args) = parser.parse_args()
-#
-#    try:
-#        infile = args[0]
-#    except IndexError:
-#        infile = ""
-#
-#    pytwine.tangle(infile, options.informat)
-#
-#
-#def convert():
-#    if len(sys.argv) == 1:
-#        print("This is pytwine document converter %s. Enter pytwine-convert -h
-#                 for help " % pytwine.__version__)
-#        sys.exit()
-#
-#    parser = OptionParser(usage="pytwine-convert [options] sourcefile",
-#                           version="Part of pytwine " + pytwine.__version__)
-#    parser.add_option("-i", "--input-format", dest="informat", default='noweb',
-#                      help="Input format: noweb, notebook or script")
-#    parser.add_option("-f", "--output-format", dest="outformat", default='html',
-#                      help="Output format script, noweb or notebook")
-#    parser.add_option("-l", "--list-formats", dest="listformats",
-#                         action="store_true", default=False,
-#                      help="List input / output formats")
-#    parser.add_option("-p", "--pandoc", dest="pandoc_args", default=None,
-#                      help="passed to pandoc for converting doc chunks")
-#
-#    (options, args) = parser.parse_args()
-#
-#    try:
-#        infile = args[0]
-#    except IndexError:
-#        infile = ""
-#
-#    pytwine.convert(file=infile,
-#                   informat=options.informat,
-#                   outformat=options.outformat,
-#                   pandoc_args=options.pandoc_args,
-#                   listformats=options.listformats)
+  # empty string and "-" become stdout
+  if not outfile_path or outfile_path == "-":
+    outfile_path = None
+
+  #options_dict["debug"] = True
+
+  with _open_or_fallback( infile_path, "r", sys.stdin) as ifp:
+    with _open_or_fallback( outfile_path, "w", sys.stdout) as ofp:
+      res = cli_twine(ifp, ofp, **options_dict)
+      sys.exit(res.value)
+
+
 

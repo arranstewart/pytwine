@@ -18,6 +18,9 @@ Version |version|
 For developers
 --------------
 
+The git repository for pytwine is available on GitHub at
+<https://github.com/arranstewart/pytwine>.
+
 .. toctree::
 
    HACKING.md

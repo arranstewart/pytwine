@@ -39,6 +39,7 @@ jobs:
           install: |
             Carp::Assert
             Test::Harness
+            File::Which
 
       - name: info - python version
         run: |

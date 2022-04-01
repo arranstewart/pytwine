@@ -46,7 +46,8 @@ setup_args = dict(
                           'hypothesis',
                           'pytest',
                           'pytest-cov',
-                          'pytest-html'
+                          'pytest-html',
+                          'pytest-tap',
                           ],
                       'docs': [ \
                           'sphinx >= 4.0',

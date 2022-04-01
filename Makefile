@@ -110,9 +110,22 @@ python_test_cmd = \
 			$(abs_mkfile_dir)/pytwine \
 			$(abs_mkfile_dir)/tests
 
-perl_test_cmd = $(PERL_PROVE) --verbose --comments $(abs_mkfile_dir)/t/*.t :: \
-	--source-dir $(abs_mkfile_dir)
+ifeq ($(detected_OS),Windows)
+# runner.pl executes Python3 and Perl tests
+# based on file extension. Since /usr/bin/env and
+# shebang lines don't work on windows.
+perl_test_runner = perl $(abs_mkfile_dir)/runner.pl
+else
+# perl's behaviour if applied to something which *isn't*
+# a perl script is to apply its shebang line --
+# see `perldoc perlrun`.
+perl_test_runner = perl
+endif
 
+perl_test_cmd = $(PERL_PROVE) --exec "$(perl_test_runner)" --verbose --comments \
+	                $(abs_mkfile_dir)/t/*.t \
+	                $(abs_mkfile_dir)/t/*.py \
+	                :: --source-dir $(abs_mkfile_dir)
 
 #######
 # targets

@@ -20,17 +20,14 @@ $ pytest pytwine tests
 ##  Acceptance test prerequisites
 
 The repository contains a number of Perl-based tests which install
-and run pytwine in a temporary directory.
-
-(Why Perl? It's a nicer "shell replacement" than either Powershell
-or Python, and provides the original implementation of [TAP][tap],
-the "Test Anything Protocol".)
+and run pytwine in a temporary directory and emit
+results in format expected by [TAP][tap] (the "Test Anything Protocol".)
 
 [tap]: https://testanything.org/tap-specification.html
 
 To run these tests, you'll need a version of Perl 5 installed, and the CPAN
-libraries `Test::Harness` (which provides the `prove` command)
-and `Carp::Assert`.
+libraries `Test::Harness` (which provides the `prove` command),
+`Carp::Assert`. and `File::Which`.
 
 On Windows, if you have Chocolatey installed, you can install these with:
 
@@ -39,23 +36,20 @@ choco install strawberryperl
 curl -L https://cpanmin.us | perl - --sudo App::cpanminus
 cpanm Carp::Assert;
 cpanm Test::Harness;
+cpanm File::Which;
 ```
 
 On Debian or Ubuntu, you probably have Perl installed already;
-but you can install these with:
+and you can install the extra libraries with:
 
 ```
-$ sudo apt-get install libcarp-assert-perl
+$ sudo apt-get install libcarp-assert-perl libfile-which-perl
 ```
 
-Run the acceptance tests with
+(On MacOS, I have no idea what the appropriate commands are, but they
+probably involve using `brew`.)
 
-```
-$ prove --verbose --comments t/*.t
-```
-
-(Alternatively, `make test-perl` will also run an appropriate
-`prove` command, if you've got the prerequisites installed.)
+Run the acceptance tests with `make test-perl`.
 
 ## Getting help on `make` targets
 

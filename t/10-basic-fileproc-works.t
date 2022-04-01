@@ -8,14 +8,14 @@ use Data::Dumper;
 use File::Temp qw/ tempfile tempdir /;
 use Carp::Assert;
 
+# Are we running on windows?
+my $windows=($^O=~/Win/)?1:0;
+
 assert( $ARGV[0] eq "--source-dir" );
 my $source_dir = $ARGV[1];
 my @testfiles = glob "${source_dir}/tests/files/*.pmd";
 
 sub trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
-
-# Are we running on windows?
-my $windows=($^O=~/Win/)?1:0;
 
 my $devnull="/dev/null";
 if ($windows) {

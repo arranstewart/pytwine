@@ -1,0 +1,393 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pytwine.parsers &#8212; pytwine 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pytwine.parsers</h1><div class="highlight"><pre>
+<span></span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">parse documents into chunks.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">TextIO</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">.core</span> <span class="kn">import</span> <span class="n">Chunk</span><span class="p">,</span> <span class="n">CodeChunk</span><span class="p">,</span> <span class="n">DocChunk</span>
+
+<span class="k">def</span> <span class="nf">_read_filepath</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Read file contents</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
+    <span class="n">contents</span> <span class="o">=</span> <span class="n">infile</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+  <span class="k">return</span> <span class="n">contents</span>
+
+<span class="k">def</span> <span class="nf">_read_file</span><span class="p">(</span><span class="n">infile</span><span class="p">:</span> <span class="n">TextIO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Read file contents</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">infile</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="Parser"><a class="viewcode-back" href="../../_autosummary/pytwine.parsers.Parser.html#pytwine.parsers.Parser">[docs]</a><span class="k">class</span> <span class="nc">Parser</span><span class="p">:</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Reads and parses twineable documents into a list of</span>
+<span class="sd">  :class:`Chunk &lt;pytwine.core.Chunk&gt;`\\ s.</span>
+
+<span class="sd">  Has a concept of a **code block marker**, i.e. something like</span>
+<span class="sd">  markdown&#39;s backtick fenced code blocks::</span>
+
+<span class="sd">    ```</span>
+
+<span class="sd">  or tilde fenced code blocks::</span>
+
+<span class="sd">    ~~~</span>
+
+
+<span class="sd">  Code blocks are considered to start on the line where</span>
+<span class="sd">  the code block marker begins, and end on the line of their</span>
+<span class="sd">  end marker.</span>
+
+<span class="sd">  Empty blocks, and code blocks containing only whitespace,</span>
+<span class="sd">  are skipped.</span>
+
+<span class="sd">  Code blocks can have pandoc-style **options**. e.g. for a Markdown</span>
+<span class="sd">  document, the options would be given like so::</span>
+
+<span class="sd">    ```python .important startLine=101 animal=&quot;spotted lynx&quot;</span>
+
+<span class="sd">  where dot gives a class and the ``=`` gives attributes.</span>
+
+<span class="sd">  The Parser doesn&#39;t parse or process options at all, but just stores</span>
+<span class="sd">  the whole unparsed start-of-block line in the</span>
+<span class="sd">  ``block_start_line`` attribute</span>
+<span class="sd">  of the :class:`CodeChunk &lt;pytwine.core.CodeChunk&gt;`;</span>
+<span class="sd">  it&#39;s up to Processor classes to parse and potentially</span>
+<span class="sd">  make use of the options.</span>
+
+<span class="sd">  Only subclass so far is :class:`MarkdownParser`.</span>
+
+<span class="sd">  Subclasses should override :meth:`_is_codeblock_start` and</span>
+<span class="sd">  :meth:`_is_codeblock_end` (see the code for details).</span>
+
+<span class="sd">  **sample usage:**</span>
+
+<span class="sd">  sample usage using :class:`MarkdownParser` subclass:</span>
+
+<span class="sd">  &gt;&gt;&gt; parser = MarkdownParser(string=&quot;some stuff&quot;)</span>
+<span class="sd">  &gt;&gt;&gt; chunks = parser.parse()</span>
+<span class="sd">  &gt;&gt;&gt; chunks</span>
+<span class="sd">  [DocChunk(chunkType=&#39;doc&#39;, contents=&#39;some stuff&#39;, number=1, startLineNum=1)]</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="c1"># as doc is processed, state will alternate between</span>
+  <span class="c1"># &quot;doc&quot; (i.e. in markdown bits)</span>
+  <span class="c1"># and &quot;code&quot; (i.e. in code blocks)</span>
+
+<div class="viewcode-block" id="Parser.__init__"><a class="viewcode-back" href="../../_autosummary/pytwine.parsers.Parser.html#pytwine.parsers.Parser.__init__">[docs]</a>  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span> <span class="p">:</span><span class="n">TextIO</span> <span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">string</span> <span class="p">:</span><span class="nb">str</span> <span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Keyword arguments:</span>
+<span class="sd">        file: path to a file to be processed</span>
+<span class="sd">        string: a string to be processed</span>
+
+<span class="sd">    One of either ``file`` or ``string`` must be given.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">file</span>
+
+    <span class="c1"># Get input from string or</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">TextIO</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">rawtext</span> <span class="o">=</span> <span class="n">_read_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">string</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">rawtext</span> <span class="o">=</span> <span class="n">string</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;string or file must be specified&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;doc&quot;</span>  <span class="c1"># Initial state of document</span>
+
+    <span class="c1"># stores start of code block, so that (a) we know</span>
+    <span class="c1"># about block_start_line, and (b) we can match end.</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">block_start_line</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">block_end_line</span>   <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+  <span class="k">def</span> <span class="nf">_is_codeblock_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span> <span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns a boolean-ish result when a line matches start-of-code-block &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;_is_codeblock_start not implemented&#39;</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">_is_codeblock_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span> <span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns a boolean-ish result when a line matches end-of-code-block</span>
+
+<span class="sd">    Should only be called when we&#39;re in a block / i.e. when self.block_start_line is not None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;_is_codeblock_end not implemented&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Parser.parse"><a class="viewcode-back" href="../../_autosummary/pytwine.parsers.Parser.html#pytwine.parsers.Parser.parse">[docs]</a>  <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Chunk</span><span class="p">]</span> <span class="p">:</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse the source and return a list of</span>
+<span class="sd">    :class:`Chunk &lt;pytwine.core.Chunk&gt;`\ s.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">lines</span> <span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rawtext</span><span class="o">.</span><span class="n">splitlines</span><span class="p">(</span><span class="n">keepends</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># we accumulate a chunk of lines in currentChunk</span>
+    <span class="c1"># (then join them back together once the chunk is done)</span>
+    <span class="n">currentChunk</span>  <span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>   <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">chunks</span>        <span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Chunk</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># keep track of how many code and non-code chunks</span>
+    <span class="c1"># we&#39;ve seen</span>
+    <span class="n">codeN</span> <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">docN</span>  <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># stores start of code block, so that (a) we know</span>
+    <span class="c1"># about block_start_line, and (b) we can match end.</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">block_start_line</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">block_end_line</span>   <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">lineNo</span> <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">chunk_start_line</span> <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># set to True when we hit a code-block start line or end line</span>
+    <span class="c1"># (```) -- we exclude that line from the block and take</span>
+    <span class="c1"># only the contents.</span>
+    <span class="n">onBlockBorder</span> <span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">add_chunk</span><span class="p">(</span><span class="n">chunkType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+      <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">      helper func: add current chunk to chunks.</span>
+<span class="sd">      don&#39;t add empty chunks or whitespace-only code</span>
+<span class="sd">      chunks.</span>
+
+<span class="sd">      returns: whether a chunk was added</span>
+<span class="sd">      &quot;&quot;&quot;</span>
+      <span class="k">assert</span> <span class="n">chunkType</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;doc&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">]</span>
+
+      <span class="n">contents</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">currentChunk</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">chunkType</span> <span class="o">==</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="n">docN</span>
+        <span class="n">clazz</span> <span class="p">:</span> <span class="nb">type</span> <span class="o">=</span> <span class="n">DocChunk</span>
+      <span class="k">elif</span> <span class="n">chunkType</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span><span class="p">:</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="n">codeN</span>
+        <span class="n">clazz</span> <span class="o">=</span> <span class="n">CodeChunk</span>
+
+      <span class="c1"># Don&#39;t parse empty chunks, or whitespace-only code chunks</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">chunkType</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span> <span class="ow">and</span> <span class="n">contents</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> \
+         <span class="p">(</span><span class="n">chunkType</span> <span class="o">==</span> <span class="s2">&quot;doc&quot;</span> <span class="ow">and</span> <span class="n">contents</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="n">keywords</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">chunkType</span><span class="o">=</span><span class="n">chunkType</span><span class="p">,</span>
+                        <span class="n">contents</span><span class="o">=</span><span class="n">contents</span><span class="p">,</span>
+                        <span class="n">number</span><span class="o">=</span><span class="n">number</span><span class="p">,</span>
+                        <span class="n">startLineNum</span><span class="o">=</span><span class="n">chunk_start_line</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chunkType</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span><span class="p">:</span>
+          <span class="n">keywords</span><span class="p">[</span><span class="s2">&quot;block_start_line&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_start_line</span>
+          <span class="n">keywords</span><span class="p">[</span><span class="s2">&quot;block_end_line&quot;</span><span class="p">]</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_end_line</span>
+
+        <span class="n">chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">clazz</span><span class="p">(</span><span class="o">**</span><span class="n">keywords</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+      <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># we want lineNos from 1, not 0</span>
+    <span class="n">bumpFst</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">lineNo</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">bumpFst</span><span class="p">,</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">)):</span>
+
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="s2">&quot;code&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_codeblock_start</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;code&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_start_line</span> <span class="o">=</span> <span class="n">line</span>
+
+        <span class="c1"># we&#39;ve finished a doc chunk, append it</span>
+        <span class="k">if</span> <span class="n">add_chunk</span><span class="p">(</span><span class="s2">&quot;doc&quot;</span><span class="p">):</span>
+          <span class="n">docN</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">currentChunk</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">chunk_start_line</span> <span class="o">=</span> <span class="n">lineNo</span>
+        <span class="n">onBlockBorder</span> <span class="o">=</span> <span class="kc">True</span>
+      <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_codeblock_end</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;doc&quot;</span>
+        <span class="c1"># we&#39;ve finished a code chunk, append it</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_end_line</span> <span class="o">=</span> <span class="n">line</span>
+        <span class="k">if</span> <span class="n">add_chunk</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">):</span>
+          <span class="n">codeN</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_end_line</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">currentChunk</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">chunk_start_line</span> <span class="o">=</span> <span class="n">lineNo</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">onBlockBorder</span> <span class="o">=</span> <span class="kc">True</span>
+
+      <span class="c1"># add line to chunk (but not lines that are boundaries</span>
+      <span class="c1"># of code blocks)</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">onBlockBorder</span><span class="p">:</span>
+        <span class="n">currentChunk</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+      <span class="n">onBlockBorder</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># end of for line in lines</span>
+    <span class="c1"># Handle the last chunk</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">block_end_line</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+      <span class="n">add_chunk</span><span class="p">(</span><span class="s2">&quot;code&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span>
+      <span class="n">add_chunk</span><span class="p">(</span><span class="s2">&quot;doc&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">chunks</span></div></div>
+
+
+<div class="viewcode-block" id="MarkdownParser"><a class="viewcode-back" href="../../_autosummary/pytwine.parsers.MarkdownParser.html#pytwine.parsers.MarkdownParser">[docs]</a><span class="k">class</span> <span class="nc">MarkdownParser</span><span class="p">(</span><span class="n">Parser</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Parse markdown files into chunks.</span>
+
+<span class="sd">  Looks for markdown-style fenced code blocks that</span>
+<span class="sd">  have &quot;``python``&quot; or &quot;``.python``&quot; as their first attribute; e.g.::</span>
+
+<span class="sd">    ``` .python someproperty=foo</span>
+
+<span class="sd">  See &lt;https://spec.commonmark.org/0.30/#fenced-code-blocks&gt;</span>
+
+<span class="sd">  The closing &quot;fence&quot; must match the opening &quot;fence&quot;: i.e., if we start a code</span>
+<span class="sd">  block with backticks, then tildes won&#39;t end it.</span>
+
+<span class="sd">  (And we can therefore include code like::</span>
+
+<span class="sd">    mystring=\&quot;&quot;&quot;</span>
+    <span class="o">~~~</span>
+    \<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="s2">  safely inside it.)</span>
+
+<span class="s2">  Fenced code blocks are only parsed when they appear at the root level –</span>
+<span class="s2">  they aren&#39;t recognized if nested inside lists or block-quotes, for</span>
+<span class="s2">  example. (But there&#39;s nothing to stop your Python code block from</span>
+<span class="s2">  outputting indented content which will be inside a list or block</span>
+<span class="s2">  quote.)</span>
+
+<span class="s2">  &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="MarkdownParser.__init__"><a class="viewcode-back" href="../../_autosummary/pytwine.parsers.MarkdownParser.html#pytwine.parsers.MarkdownParser.__init__">[docs]</a>  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">Parser</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
+
+    <span class="c1"># see tests/test_parser.py/test_tildes_can_start_block</span>
+    <span class="c1"># two groups: the fence start (e.g. ``` or ```` or ~~~~)</span>
+    <span class="c1">#   and the stuff that comes after &quot;python&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">codeblock_begin</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^([`~]{3,})\s*(?:|\.|)python(?:;|,|)\s*(.*?)(?:\}|\s*)$&quot;</span></div>
+
+  <span class="k">def</span> <span class="nf">_is_codeblock_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns a boolean-ish result when a line matches</span>
+<span class="sd">    ``codeblock_begin`` pattern</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">codeblock_begin</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+
+  <span class="k">def</span> <span class="nf">_is_codeblock_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; returns a boolean-ish result when a line is</span>
+<span class="sd">    a codeblock end.</span>
+
+<span class="sd">    Should only be called when we&#39;re in a code block</span>
+<span class="sd">    (i.e. when self.block_start_line is not None)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_start_line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="c1"># find out how the block started (three backticks? four tildes):</span>
+    <span class="c1"># that&#39;s how it must end.</span>
+    <span class="n">regex_result</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">codeblock_begin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_start_line</span><span class="p">)</span>
+    <span class="n">fence_chars</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">regex_result</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="n">fence_chars</span></div>
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">pytwine</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../HACKING.html">Hacking on the source code</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/pytwine.html">pytwine</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Arran D. Stewart.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

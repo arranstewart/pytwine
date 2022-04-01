@@ -1,0 +1,26 @@
+pytwine.processors.PythonProcessor
+==================================
+
+.. currentmodule:: pytwine.processors
+
+.. autoclass:: PythonProcessor
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PythonProcessor.__init__
+      ~PythonProcessor.twine
+   
+   
+
+   
+   
+   

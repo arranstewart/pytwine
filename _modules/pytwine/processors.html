@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pytwine.processors &#8212; pytwine 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pytwine.processors</h1><div class="highlight"><pre>
+<span></span>
+<span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Classes that turn lists of</span>
+<span class="sd">:class:`Chunk &lt;pytwine.core.Chunk&gt;`\ s back into</span>
+<span class="sd">documents.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">textwrap</span> <span class="k">as</span> <span class="nn">tw</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">TextIO</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="c1"># ?? use binary??</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
+
+<span class="kn">from</span> <span class="nn">.core</span> <span class="kn">import</span> <span class="n">Chunk</span><span class="p">,</span> <span class="n">CodeChunk</span><span class="p">,</span> <span class="n">TwineExitStatus</span>
+
+<div class="viewcode-block" id="AnnotatedCodeChunk"><a class="viewcode-back" href="../../_autosummary/pytwine.processors.AnnotatedCodeChunk.html#pytwine.processors.AnnotatedCodeChunk">[docs]</a><span class="k">class</span> <span class="nc">AnnotatedCodeChunk</span><span class="p">(</span><span class="n">CodeChunk</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot; just used for casting, so that mypy won&#39;t complain</span>
+<span class="sd">  about attributes we add.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="k">pass</span></div>
+  <span class="c1">#wibble: bool</span>
+
+<div class="viewcode-block" id="Processor"><a class="viewcode-back" href="../../_autosummary/pytwine.processors.Processor.html#pytwine.processors.Processor">[docs]</a><span class="k">class</span> <span class="nc">Processor</span><span class="p">:</span>
+  <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Base class for things that process a list of</span>
+<span class="sd">  :class:`Chunk &lt;pytwine.core.Chunk&gt;`\ s back into</span>
+<span class="sd">  a document.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">      _sink: subclasses should have an attribute ``_sink``,</span>
+<span class="sd">        a file-like that gets written to.</span>
+
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="n">_sink</span><span class="p">:</span> <span class="n">TextIO</span>
+
+  <span class="k">def</span> <span class="nf">_write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span> <span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;write ``s`` to our ``_sink`` with no newline&quot;&quot;&quot;</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_sink</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IdentityProcessor"><a class="viewcode-back" href="../../_autosummary/pytwine.processors.IdentityProcessor.html#pytwine.processors.IdentityProcessor">[docs]</a><span class="k">class</span> <span class="nc">IdentityProcessor</span><span class="p">(</span><span class="n">Processor</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  The processor that tries to map every chunk back to itself.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IdentityProcessor.__init__"><a class="viewcode-back" href="../../_autosummary/pytwine.processors.IdentityProcessor.html#pytwine.processors.IdentityProcessor.__init__">[docs]</a>  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sink</span><span class="p">:</span> <span class="n">TextIO</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Arguments:</span>
+<span class="sd">      sink: a file-like object to be written to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_sink</span> <span class="o">=</span> <span class="n">sink</span></div>
+
+<div class="viewcode-block" id="IdentityProcessor.twine"><a class="viewcode-back" href="../../_autosummary/pytwine.processors.IdentityProcessor.html#pytwine.processors.IdentityProcessor.twine">[docs]</a>  <span class="k">def</span> <span class="nf">twine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunks</span> <span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Chunk</span><span class="p">]</span> <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;THE TWINE FUNC - WORK IN PROGRESS&quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
+
+      <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">chunkType</span> <span class="o">==</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="n">chunk</span><span class="o">.</span><span class="n">chunkType</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span><span class="p">:</span>
+        <span class="n">chunk</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">AnnotatedCodeChunk</span><span class="p">,</span> <span class="n">chunk</span><span class="p">)</span>
+        <span class="c1">#chunk.wibble = True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">block_start_line</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">block_end_line</span><span class="p">)</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">_get_traceback_text</span><span class="p">(</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">tb</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+  <span class="sd">&quot;&quot;&quot;return the text that would be printed by</span>
+<span class="sd">  traceback.print_exception.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="n">sio</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+  <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">tb</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sio</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">sio</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="PythonProcessor"><a class="viewcode-back" href="../../_autosummary/pytwine.processors.PythonProcessor.html#pytwine.processors.PythonProcessor">[docs]</a><span class="k">class</span> <span class="nc">PythonProcessor</span><span class="p">(</span><span class="n">Processor</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Processor that tries to run all code blocks as Python.</span>
+
+<span class="sd">  Uncompileable code blocks just get omitted from the output.</span>
+
+<span class="sd">  TODO: put an error into the output</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="c1"># TODO: put an error into the output</span>
+
+<div class="viewcode-block" id="PythonProcessor.__init__"><a class="viewcode-back" href="../../_autosummary/pytwine.processors.PythonProcessor.html#pytwine.processors.PythonProcessor.__init__">[docs]</a>  <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sink</span><span class="p">:</span> <span class="n">TextIO</span><span class="p">,</span> <span class="n">log</span><span class="p">:</span> <span class="n">TextIO</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Arguments:</span>
+<span class="sd">      sink: a file-like object to be written to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_sink</span> <span class="o">=</span> <span class="n">sink</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">globals</span> <span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">exceptions_encountered</span> <span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="ne">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+  <span class="c1">######</span>
+  <span class="c1"># TODO: make sure we store original filename</span>
+  <span class="c1"># so can use in error mesgs</span>
+
+  <span class="k">def</span> <span class="nf">_runcode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span> <span class="p">:</span> <span class="n">CodeChunk</span><span class="p">):</span>
+    <span class="n">old_stdout</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+    <span class="k">try</span><span class="p">:</span>
+      <span class="n">tmp_stdout</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+      <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">tmp_stdout</span>
+      <span class="n">code_obj</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">contents</span><span class="p">,</span> <span class="s1">&#39;&lt;string&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;exec&#39;</span><span class="p">)</span>
+      <span class="n">exec</span><span class="p">(</span><span class="n">code_obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">globals</span><span class="p">)</span>
+      <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">old_stdout</span>
+    <span class="k">except</span> <span class="ne">SyntaxError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+      <span class="p">(</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">tb</span><span class="p">)</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">exceptions_encountered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+      <span class="n">indentation</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="mi">4</span>
+      <span class="n">block_excerpt</span> <span class="o">=</span> <span class="n">tw</span><span class="o">.</span><span class="n">indent</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[:</span><span class="mi">3</span><span class="p">]),</span>
+                                <span class="n">indentation</span><span class="p">)</span>
+      <span class="n">tb_text</span> <span class="o">=</span> <span class="n">_get_traceback_text</span><span class="p">(</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">tb</span><span class="p">)</span>
+
+      <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;compilation exception while processing code block no. </span><span class="si">{</span><span class="n">chunk</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2">,&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;beginning at line </span><span class="si">{</span><span class="n">chunk</span><span class="o">.</span><span class="n">startLineNum</span><span class="si">}</span><span class="s2"> of input file:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">block_excerpt</span><span class="p">,</span>
+            <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">    ...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
+      <span class="n">hbar</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="mi">40</span>
+      <span class="nb">print</span><span class="p">(</span><span class="n">tw</span><span class="o">.</span><span class="n">indent</span><span class="p">(</span><span class="n">hbar</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">tb_text</span><span class="p">,</span> <span class="n">indentation</span><span class="p">),</span>
+            <span class="n">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;exception occurred :/&quot;</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+      <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">old_stdout</span>
+
+    <span class="k">return</span> <span class="n">tmp_stdout</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+<div class="viewcode-block" id="PythonProcessor.twine"><a class="viewcode-back" href="../../_autosummary/pytwine.processors.PythonProcessor.html#pytwine.processors.PythonProcessor.twine">[docs]</a>  <span class="k">def</span> <span class="nf">twine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunks</span> <span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Chunk</span><span class="p">]</span> <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TwineExitStatus</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;WORK IN PROGRESS - process chunks and write to sink.</span>
+
+<span class="sd">    in case of errors, returns a :class:`TwineExitStatus`;</span>
+<span class="sd">    its .value attribute is either int or None, and</span>
+<span class="sd">    can be passed to sys.exit as a status code.</span>
+
+<span class="sd">    Effects:</span>
+<span class="sd">      - output is written to the ``sink`` arrgument</span>
+<span class="sd">        passed to the constructor.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
+
+      <span class="k">if</span> <span class="n">chunk</span><span class="o">.</span><span class="n">chunkType</span> <span class="o">==</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">chunk</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="n">chunk</span><span class="o">.</span><span class="n">chunkType</span> <span class="o">==</span> <span class="s2">&quot;code&quot;</span><span class="p">:</span>
+        <span class="n">chunk</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">AnnotatedCodeChunk</span><span class="p">,</span> <span class="n">chunk</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Processing chunk&quot;</span><span class="p">,</span> <span class="n">chunk</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_runcode</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exceptions_encountered</span><span class="p">:</span>
+      <span class="n">num_exceptions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exceptions_encountered</span><span class="p">)</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Encountered&quot;</span><span class="p">,</span> <span class="n">num_exceptions</span><span class="p">,</span>
+            <span class="s2">&quot;exceptions while processing input file&quot;</span><span class="p">,</span>
+            <span class="n">file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
+      <span class="k">return</span> <span class="n">TwineExitStatus</span><span class="o">.</span><span class="n">BLOCK_COMPILATION_ERROR</span>
+
+    <span class="k">return</span> <span class="n">TwineExitStatus</span><span class="o">.</span><span class="n">SUCCESS</span></div></div>
+
+<span class="c1">#class Twiner:</span>
+<span class="c1">#</span>
+<span class="c1">#  &quot;&quot;&quot;</span>
+<span class="c1">#  For processing documents.</span>
+<span class="c1">#  &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#  def __init__(self, source, output = None):</span>
+<span class="c1">#    self.source = source</span>
+<span class="c1">#    #name, ext = os.path.splitext(os.path.basename(source))</span>
+<span class="c1">#    #self.basename = name</span>
+<span class="c1">#    #self.file_ext = ext</span>
+<span class="c1">#    self.sink = None</span>
+<span class="c1">#    self.output = output</span>
+<span class="c1">#</span>
+<span class="c1">#    self.parsed = None</span>
+<span class="c1">#    self.executed = None</span>
+<span class="c1">#</span>
+<span class="c1">#  def _setwd(self):</span>
+<span class="c1">#      self.wd = os.path.dirname(self.source)</span>
+<span class="c1">#</span>
+<span class="c1">#      self.reader.parse()</span>
+<span class="c1">#      self.parsed = self.reader.getparsed()</span>
+<span class="c1">#</span>
+<span class="c1">#  ##### !!!</span>
+<span class="c1">#  def run(self, Processor = None):</span>
+<span class="c1">#      &quot;&quot;&quot;Execute code in the document&quot;&quot;&quot;</span>
+<span class="c1">#      if Processor is None:</span>
+<span class="c1">#          Processor = PwebProcessors.getprocessor(self.kernel)</span>
+<span class="c1">#</span>
+<span class="c1">#      proc = Processor(copy.deepcopy(self.parsed),</span>
+<span class="c1">#                       self.kernel,</span>
+<span class="c1">#                       self.source,</span>
+<span class="c1">#                       self.documentationmode,</span>
+<span class="c1">#                       self.figdir,</span>
+<span class="c1">#                       self.wd</span>
+<span class="c1">#                      )</span>
+<span class="c1">#      proc.run()</span>
+<span class="c1">#      self.executed = proc.getresults()</span>
+<span class="c1">#</span>
+<span class="c1">#  ### !!!</span>
+<span class="c1">#  def write(self):</span>
+<span class="c1">#      &quot;&quot;&quot;Write formatted code to file&quot;&quot;&quot;</span>
+<span class="c1">#      self.setsink()</span>
+<span class="c1">#</span>
+<span class="c1">#      self._writeToSink(self.formatted.replace(&quot;\r&quot;, &quot;&quot;))</span>
+<span class="c1">#      self._print(&#39;Weaved {src} to {dst}\n&#39;.format(src=self.source,</span>
+<span class="c1">#                                                        dst=self.sink))</span>
+<span class="c1">#  def twine(self):</span>
+<span class="c1">#      &quot;&quot;&quot;Weave the document, equals -&gt; parse, run, format, write&quot;&quot;&quot;</span>
+<span class="c1">#      self.run()</span>
+<span class="c1">#      self.format()</span>
+<span class="c1">#      self.write()</span>
+
+
+
+
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">pytwine</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../HACKING.html">Hacking on the source code</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/pytwine.html">pytwine</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Arran D. Stewart.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

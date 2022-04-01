@@ -1,0 +1,38 @@
+pytwine.processors.AnnotatedCodeChunk
+=====================================
+
+.. currentmodule:: pytwine.processors
+
+.. autoclass:: AnnotatedCodeChunk
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AnnotatedCodeChunk.__init__
+      ~AnnotatedCodeChunk.count
+      ~AnnotatedCodeChunk.index
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AnnotatedCodeChunk.chunkType
+      ~AnnotatedCodeChunk.contents
+      ~AnnotatedCodeChunk.number
+      ~AnnotatedCodeChunk.startLineNum
+      ~AnnotatedCodeChunk.block_start_line
+      ~AnnotatedCodeChunk.block_end_line
+   
+   

@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>pytwine.core.TwineExitStatus &#8212; pytwine 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pytwine.parsers" href="pytwine.parsers.html" />
+    <link rel="prev" title="pytwine.core.DocChunk" href="pytwine.core.DocChunk.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="pytwine-core-twineexitstatus">
+<h1>pytwine.core.TwineExitStatus<a class="headerlink" href="#pytwine-core-twineexitstatus" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pytwine.core.TwineExitStatus">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pytwine.core.</span></span><span class="sig-name descname"><span class="pre">TwineExitStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pytwine/core.html#TwineExitStatus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pytwine.core.TwineExitStatus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>Some exit statuses.</p>
+<p>Given a TwineExitStatus, its .value is either
+<cite>None</cite> or an <cite>int</cite>, and can be passed to sys.exit.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pytwine.core.TwineExitStatus.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pytwine.core.TwineExitStatus.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pytwine.core.TwineExitStatus.SUCCESS" title="pytwine.core.TwineExitStatus.SUCCESS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SUCCESS</span></code></a></p></td>
+<td><p>success</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pytwine.core.TwineExitStatus.BAD_SCRIPT_ARGS" title="pytwine.core.TwineExitStatus.BAD_SCRIPT_ARGS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BAD_SCRIPT_ARGS</span></code></a></p></td>
+<td><p>wrong number, or, bad arguments sypplied to script</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pytwine.core.TwineExitStatus.BLOCK_COMPILATION_ERROR" title="pytwine.core.TwineExitStatus.BLOCK_COMPILATION_ERROR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BLOCK_COMPILATION_ERROR</span></code></a></p></td>
+<td><p>an exception was encountered trying to compile a code block</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pytwine.core.TwineExitStatus.BAD_SCRIPT_ARGS">
+<span class="sig-name descname"><span class="pre">BAD_SCRIPT_ARGS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#pytwine.core.TwineExitStatus.BAD_SCRIPT_ARGS" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrong number, or, bad arguments sypplied to script</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pytwine.core.TwineExitStatus.BLOCK_COMPILATION_ERROR">
+<span class="sig-name descname"><span class="pre">BLOCK_COMPILATION_ERROR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#pytwine.core.TwineExitStatus.BLOCK_COMPILATION_ERROR" title="Permalink to this definition">¶</a></dt>
+<dd><p>an exception was encountered trying to compile a code block</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pytwine.core.TwineExitStatus.SUCCESS">
+<span class="sig-name descname"><span class="pre">SUCCESS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pytwine.core.TwineExitStatus.SUCCESS" title="Permalink to this definition">¶</a></dt>
+<dd><p>success</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">pytwine</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../HACKING.html">Hacking on the source code</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="pytwine.html">pytwine</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pytwine.cli.html">pytwine.cli</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="pytwine.core.html">pytwine.core</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pytwine.core.merge_docchunks.html">pytwine.core.merge_docchunks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pytwine.core.Chunk.html">pytwine.core.Chunk</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pytwine.core.CodeChunk.html">pytwine.core.CodeChunk</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pytwine.core.DocChunk.html">pytwine.core.DocChunk</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">pytwine.core.TwineExitStatus</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pytwine.parsers.html">pytwine.parsers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pytwine.processors.html">pytwine.processors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pytwine.scripts.html">pytwine.scripts</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="pytwine.html">pytwine</a><ul>
+  <li><a href="pytwine.core.html">pytwine.core</a><ul>
+      <li>Previous: <a href="pytwine.core.DocChunk.html" title="previous chapter">pytwine.core.DocChunk</a></li>
+      <li>Next: <a href="pytwine.parsers.html" title="next chapter">pytwine.parsers</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Arran D. Stewart.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/_autosummary/pytwine.core.TwineExitStatus.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

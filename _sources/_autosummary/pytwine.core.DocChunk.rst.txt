@@ -1,0 +1,36 @@
+pytwine.core.DocChunk
+=====================
+
+.. currentmodule:: pytwine.core
+
+.. autoclass:: DocChunk
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DocChunk.__init__
+      ~DocChunk.count
+      ~DocChunk.index
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DocChunk.chunkType
+      ~DocChunk.contents
+      ~DocChunk.number
+      ~DocChunk.startLineNum
+   
+   

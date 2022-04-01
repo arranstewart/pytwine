@@ -1,0 +1,6 @@
+pytwine.core.merge\_docchunks
+=============================
+
+.. currentmodule:: pytwine.core
+
+.. autofunction:: merge_docchunks

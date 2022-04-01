@@ -1,0 +1,41 @@
+pytwine.core
+============
+
+.. automodule:: pytwine.core
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      merge_docchunks
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: cust-class-template.rst
+   
+      Chunk
+      CodeChunk
+      DocChunk
+      TwineExitStatus
+   
+   
+
+   
+   
+   
+
+
+

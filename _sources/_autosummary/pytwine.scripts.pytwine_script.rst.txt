@@ -1,0 +1,6 @@
+pytwine.scripts.pytwine\_script
+===============================
+
+.. currentmodule:: pytwine.scripts
+
+.. autofunction:: pytwine_script

@@ -1,0 +1,25 @@
+pytwine.processors.Processor
+============================
+
+.. currentmodule:: pytwine.processors
+
+.. autoclass:: Processor
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Processor.__init__
+   
+   
+
+   
+   
+   

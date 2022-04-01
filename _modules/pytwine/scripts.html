@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pytwine.scripts &#8212; pytwine 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pytwine.scripts</h1><div class="highlight"><pre>
+<span></span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions that get invoked by installed scripts.</span>
+
+<span class="sd">Wrappers around functions in :mod:`pytwine.cli`</span>
+<span class="sd">which add command-line argument parsing.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TextIO</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span> <span class="nn">optparse</span> <span class="kn">import</span> <span class="n">OptionParser</span>
+
+<span class="kn">import</span> <span class="nn">pytwine</span>
+<span class="kn">from</span> <span class="nn">.cli</span>   <span class="kn">import</span> <span class="n">cli_twine</span>
+<span class="kn">from</span> <span class="nn">.core</span>  <span class="kn">import</span> <span class="n">TwineExitStatus</span>
+
+<span class="k">def</span> <span class="nf">_open_or_fallback</span><span class="p">(</span> <span class="n">file_path</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fallback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TextIO</span><span class="p">]</span> <span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Arguments:</span>
+<span class="sd">    file_path: a file path to open, or None to use the fallback.</span>
+<span class="sd">    mode: mode to open with (e.g. &quot;w&quot; or &quot;r&quot;)</span>
+<span class="sd">    fallback: what to use when file_path is None; when context</span>
+<span class="sd">      finishes, this *won&#39;t* close.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="k">if</span> <span class="n">file_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">fallback</span><span class="o">.</span><span class="n">close</span> <span class="o">=</span> <span class="k">lambda</span> <span class="p">:</span> <span class="kc">None</span> <span class="c1"># type: ignore</span>
+    <span class="k">return</span> <span class="n">fallback</span>
+
+  <span class="c1"># pylint: disable=consider-using-with</span>
+  <span class="k">return</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="pytwine_script"><a class="viewcode-back" href="../../_autosummary/pytwine.scripts.pytwine_script.html#pytwine.scripts.pytwine_script">[docs]</a><span class="k">def</span> <span class="nf">pytwine_script</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Implement the ``pytwine`` script: parse command line options,</span>
+<span class="sd">  process a document, exit with an appriorate exit status.</span>
+
+<span class="sd">  Option stuff:</span>
+<span class="sd">    - if no sourcefile given, or &quot;-&quot; given, use stdin</span>
+<span class="sd">    - if no outfile given, or &quot;-&quot; given, use stdout</span>
+
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="c1"># Command line options</span>
+  <span class="n">parser</span> <span class="o">=</span> <span class="n">OptionParser</span><span class="p">(</span><span class="n">usage</span><span class="o">=</span><span class="s2">&quot;pytwine [options] [sourcefile [outfile]]&quot;</span><span class="p">,</span>
+                        <span class="n">version</span><span class="o">=</span><span class="s2">&quot;pytwine &quot;</span> <span class="o">+</span> <span class="n">pytwine</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<span class="c1">#    parser.add_option(&quot;-f&quot;, &quot;--format&quot;, dest=&quot;doctype&quot;, default=None,</span>
+<span class="c1">#                      help=&quot;The output format. Available formats: &quot; +</span>
+<span class="c1">#                             pytwine.PwebFormats.shortformats() +</span>
+<span class="c1">#                           &quot; Use pytwine -l to list descriptions or see</span>
+<span class="c1">#                             http://mpastell.com/pytwine/formats.html&quot;)</span>
+
+  <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="s2">&quot;--output&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of the output file. (Overrides any arguments)&quot;</span><span class="p">)</span>
+  <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="s2">&quot;--debug&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;debug&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;print additional debugging information to standard error&quot;</span><span class="p">)</span>
+
+  <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+  <span class="n">options_dict</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">TwineExitStatus</span><span class="o">.</span><span class="n">BAD_SCRIPT_ARGS</span><span class="p">)</span>
+
+  <span class="n">infile_path</span>  <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+  <span class="n">outfile_path</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+  <span class="k">try</span><span class="p">:</span>
+    <span class="n">infile_path</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+  <span class="c1"># empty string and &quot;-&quot; become stdin</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">infile_path</span> <span class="ow">or</span> <span class="n">infile_path</span> <span class="o">==</span> <span class="s2">&quot;-&quot;</span><span class="p">:</span>
+    <span class="n">infile_path</span> <span class="o">=</span> <span class="kc">None</span>
+
+  <span class="k">try</span><span class="p">:</span>
+    <span class="n">outfile_path</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+  <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+  <span class="k">if</span> <span class="s2">&quot;output&quot;</span> <span class="ow">in</span> <span class="n">options_dict</span> <span class="ow">and</span> <span class="n">options_dict</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">outfile_path</span> <span class="o">=</span> <span class="n">options_dict</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span>
+  <span class="k">del</span> <span class="n">options_dict</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span>
+
+  <span class="c1"># empty string and &quot;-&quot; become stdout</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">outfile_path</span> <span class="ow">or</span> <span class="n">outfile_path</span> <span class="o">==</span> <span class="s2">&quot;-&quot;</span><span class="p">:</span>
+    <span class="n">outfile_path</span> <span class="o">=</span> <span class="kc">None</span>
+
+  <span class="c1">#options_dict[&quot;debug&quot;] = True</span>
+
+  <span class="k">with</span> <span class="n">_open_or_fallback</span><span class="p">(</span> <span class="n">infile_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="p">)</span> <span class="k">as</span> <span class="n">ifp</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">_open_or_fallback</span><span class="p">(</span> <span class="n">outfile_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span> <span class="k">as</span> <span class="n">ofp</span><span class="p">:</span>
+      <span class="n">res</span> <span class="o">=</span> <span class="n">cli_twine</span><span class="p">(</span><span class="n">ifp</span><span class="p">,</span> <span class="n">ofp</span><span class="p">,</span> <span class="o">**</span><span class="n">options_dict</span><span class="p">)</span>
+      <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">pytwine</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../HACKING.html">Hacking on the source code</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/pytwine.html">pytwine</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Arran D. Stewart.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

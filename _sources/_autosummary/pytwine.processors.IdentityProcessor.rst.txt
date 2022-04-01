@@ -1,0 +1,26 @@
+pytwine.processors.IdentityProcessor
+====================================
+
+.. currentmodule:: pytwine.processors
+
+.. autoclass:: IdentityProcessor
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~IdentityProcessor.__init__
+      ~IdentityProcessor.twine
+   
+   
+
+   
+   
+   

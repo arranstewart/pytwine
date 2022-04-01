@@ -1,0 +1,27 @@
+pytwine.core.TwineExitStatus
+============================
+
+.. currentmodule:: pytwine.core
+
+.. autoclass:: TwineExitStatus
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TwineExitStatus.SUCCESS
+      ~TwineExitStatus.BAD_SCRIPT_ARGS
+      ~TwineExitStatus.BLOCK_COMPILATION_ERROR
+   
+   

@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>pytwine: produce reports from Markdown with embedded Python code blocks &#8212; pytwine 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Hacking on the source code" href="HACKING.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="pytwine-produce-reports-from-markdown-with-embedded-python-code-blocks">
+<h1>pytwine: produce reports from Markdown with embedded Python code blocks<a class="headerlink" href="#pytwine-produce-reports-from-markdown-with-embedded-python-code-blocks" title="Permalink to this headline">¶</a></h1>
+<section id="version-version">
+<h2>Version 0.1.0<a class="headerlink" href="#version-version" title="Permalink to this headline">¶</a></h2>
+<div class="contents local topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#status" id="id1">Status</a></p></li>
+<li><p><a class="reference internal" href="#requirements" id="id2">Requirements</a></p></li>
+<li><p><a class="reference internal" href="#installation" id="id3">Installation</a></p></li>
+<li><p><a class="reference internal" href="#usage" id="id4">Usage</a></p></li>
+<li><p><a class="reference internal" href="#similar-projects" id="id5">Similar projects</a></p></li>
+<li><p><a class="reference internal" href="#for-developers" id="id6">For developers</a></p></li>
+<li><p><a class="reference internal" href="#api-documentation" id="id7">API Documentation</a></p></li>
+<li><p><a class="reference internal" href="#indices-and-tables" id="id8">Indices and tables</a></p></li>
+</ul>
+</div>
+<p><strong>pytwine</strong> is a minimal report generator for generating
+documents from Markdown with embedded Python code.
+It is a simple tool in the tradition of <a class="reference external" href="https://github.com/mpastell/Pweave">Pweave</a>
+and <a class="reference external" href="https://github.com/nedbat/cog">cog</a>.</p>
+<section id="status">
+<h3>Status<a class="headerlink" href="#status" title="Permalink to this headline">¶</a></h3>
+<p><strong>pre-alpha software – use at own risk</strong></p>
+<p>This software is a work in progress, and is not yet feature-complete.</p>
+</section>
+<section id="requirements">
+<h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
+<p>A Python interpreter, &gt;= 3.6.</p>
+</section>
+<section id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python3 -m pip install https://github.com/arranstewart/pytwine/archive/refs/heads/master.zip
+</pre></div>
+</div>
+</section>
+<section id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<p>Typical is to give files a <code class="docutils literal notranslate"><span class="pre">.pmd</span></code> extension, and process them into <code class="docutils literal notranslate"><span class="pre">.md</span></code>.</p>
+</section>
+<section id="similar-projects">
+<h3>Similar projects<a class="headerlink" href="#similar-projects" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mpastell/Pweave">Pweave</a></p></li>
+<li><p><a class="reference external" href="https://github.com/kiwi0fruit/knitty">knitty</a></p></li>
+<li><p><a class="reference external" href="https://github.com/nedbat/cog">cog</a></p></li>
+</ul>
+</section>
+<section id="for-developers">
+<h3>For developers<a class="headerlink" href="#for-developers" title="Permalink to this headline">¶</a></h3>
+<p>The git repository for pytwine is available on GitHub at
+&lt;<a class="reference external" href="https://github.com/arranstewart/pytwine">https://github.com/arranstewart/pytwine</a>&gt;.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="HACKING.html">Hacking on the source code</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="HACKING.html#acceptance-test-prerequisites">Acceptance test prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HACKING.html#getting-help-on-make-targets">Getting help on <code class="docutils literal notranslate"><span class="pre">make</span></code> targets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HACKING.html#out-of-source-tests">“out-of-source” tests</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="api-documentation">
+<h3>API Documentation<a class="headerlink" href="#api-documentation" title="Permalink to this headline">¶</a></h3>
+<p>If you are looking for information on a specific function, class, or method,
+this part of the documentation is for you.</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="_autosummary/pytwine.html#module-pytwine" title="pytwine"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pytwine</span></code></a></p></td>
+<td><p>pytwine package</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="indices-and-tables">
+<h3>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">pytwine</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="HACKING.html">Hacking on the source code</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/pytwine.html">pytwine</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="HACKING.html" title="next chapter">Hacking on the source code</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Arran D. Stewart.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

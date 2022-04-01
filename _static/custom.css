@@ -1,0 +1,14 @@
+
+section dl.py.attribute,
+section dl.py.method,
+section dl.py.property
+{
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+section p.rubric {
+  font-size: 130%;
+  margin-top: 40px;
+}
+

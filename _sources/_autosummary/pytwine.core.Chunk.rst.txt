@@ -1,0 +1,36 @@
+pytwine.core.Chunk
+==================
+
+.. currentmodule:: pytwine.core
+
+.. autoclass:: Chunk
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Chunk.__init__
+      ~Chunk.count
+      ~Chunk.index
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Chunk.chunkType
+      ~Chunk.contents
+      ~Chunk.number
+      ~Chunk.startLineNum
+   
+   
